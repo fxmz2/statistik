@@ -2,7 +2,7 @@
 (() => {
   const T = window.tsg;
   const h = T.h;
-  const ALL = ['cfrange', 'duowahl', 'duoname', 'duotabelle', 'gamessum', 'spieltabelle', 'seasonsel', 'summary', 'kpi', 'kpisplit', 'spot', 'mdesc', 'legend', 'saisonchart', 'lead', 'profilwahl', 'pval', 'profilchart', 'profilspiele',
+  const ALL = ['cfrange', 'duowahl', 'duotabelle', 'gamessum', 'spieltabelle', 'seasonsel', 'summary', 'kpi', 'kpisplit', 'spot', 'mdesc', 'legend', 'saisonchart', 'lead', 'profilwahl', 'pval', 'profilchart', 'profilspiele',
     'profiltabelle', 'spielertabelle', 'wkpi', 'subhist', 'statetabelle', 'mitohnetabelle', 'kaderlegend', 'kaderchart', 'durchchart', 'beidetabelle', 'bkpi',
     'platzchart', 'tabellentabelle', 'heimtabelle', 'spielliste', 'gegnertabelle', 'bestseason', 'msrecent', 'msnext', 'rbsum', 'rueckblick', 'factsum', 'fact', 'tjchart', 'abdeckung', 'fehlliste', 'abweichung', 'bilanzkurz', 'mittabelle', 'vorltabelle', 'pgegtabelle'];
   T.redraw = (names = ALL) => names.forEach((n) => dash.draw(n));
@@ -1152,36 +1152,33 @@
 
   // ---------- Duo-Vergleich ----------
   T.st.duo = {};
+  const DUOS = [['a', 'up'], ['b', 'neu'], ['c', 'ab'], ['d', 'mix']];
   const duoDefaults = () => {
     const ps = T.players().slice().sort((a, b) => b.matches - a.matches).map((p) => p.name);
-    return {a1: ps[0], a2: ps[1], b1: ps[2], b2: ps[3]};
+    return {a1: ps[0], a2: ps[1], b1: ps[2], b2: ps[3], c1: '', c2: '', d1: '', d2: ''};
   };
   const duoPick = (slot) => {
     const names = new Set(T.players().map((p) => p.name));
     const v = T.st.duo[slot];
+    if (v === '' && /^[cd]/.test(slot)) return '';
     return v && names.has(v) ? v : duoDefaults()[slot];
   };
   T.draw('duowahl', (sel) => {
     if (!T.ok('spielerspiele', 'spiele')) { T.setOptions(sel, []); return; }
     const names = T.players().map((p) => p.name).sort((a, b) => a.localeCompare(b, 'de'));
-    T.setOptions(sel, names.map((n) => [n, n]));
-    const v = duoPick(sel.dataset.slot);
-    if (v) sel.value = v;
+    const optional = /^[cd]/.test(sel.dataset.slot);
+    T.setOptions(sel, [...(optional ? [['– kein Spieler –', '']] : []), ...names.map((n) => [n, n])]);
+    sel.value = duoPick(sel.dataset.slot) || '';
   });
   const duoChange = (e) => {
     const s = e.target.closest('.tsg-duo-sel');
     if (!s || T.st.duo[s.dataset.slot] === s.value) return;
     T.st.duo[s.dataset.slot] = s.value;
-    T.redraw(['duoname', 'duotabelle']);
+    T.redraw(['duowahl', 'duotabelle']);
   };
   T.root.addEventListener('change', duoChange);
   T.root.addEventListener('input', duoChange);
   $$('.tsg-duo-sel').forEach((x) => { x.addEventListener('change', duoChange); x.addEventListener('input', duoChange); });
-  T.draw('duoname', (el) => {
-    const d = el.dataset.duo;
-    const n1 = T.ok('spielerspiele', 'spiele') ? duoPick(d + '1') : null, n2 = n1 ? duoPick(d + '2') : null;
-    el.textContent = n1 && n2 ? n1 + ' + ' + n2 : (d === 'a' ? 'Duo A' : 'Duo B');
-  });
   T.goalsByMatch = () => T.memo('gbm', () => d3.group(T.ok('tore') ? dash.data('tore').data : [], (t) => t.matchId));
   T.duo = (n1, n2) => {
     const mm = T.matchMap(), gbm = T.goalsByMatch();
@@ -1212,10 +1209,14 @@
       pairPts, pairPtsPg: both.n ? T.q(pairPts, both.n) : null, ovMin, ovGames, ovPm: ovGames ? ovF - ovA : null, ovF, ovA,
       ovPm90: ovMin >= 90 ? T.q((ovF - ovA) * 90, ovMin) : null, only1, only2};
   };
-  T.draw('duotabelle', (el) => {
-    el.replaceChildren();
+  T.draw('duotabelle', (table) => {
+    table.replaceChildren();
     if (!T.ok('spielerspiele', 'spiele')) return;
-    const A = T.duo(duoPick('a1'), duoPick('a2')), B = T.duo(duoPick('b1'), duoPick('b2'));
+    const duos = DUOS.map(([d, sw]) => ({d, sw, n1: duoPick(d + '1'), n2: duoPick(d + '2')}))
+      .filter((x) => x.n1 && x.n2 && x.n1 !== x.n2).map((x) => ({...x, r: T.duo(x.n1, x.n2)}));
+    const head = h('tr', null, h('th', {class: 'tsg-l'}, h('span', {class: 'tsg-detail-th', text: 'Kennzahl'})),
+      duos.map((x) => h('th', null, h('span', {class: 'tsg-duo-head'}, h('span', null, T.sw(x.sw), ' Duo ' + x.d.toUpperCase()), h('span', {text: x.n1}), h('span', {text: '+ ' + x.n2})))));
+    const body = h('tbody');
     const rows = [
       ['group', 'Beide im Spiel'],
       ['Gemeinsame Spiele', (d) => d.both.n, 'int', 0],
@@ -1235,18 +1236,21 @@
       ['Punkte pro Spiel – nur zweiter Spieler', (d) => d.only2.ppg, 'd2', 0, (d) => `${d.n2}, ${d.only2.n} Sp.`],
     ];
     for (const r of rows) {
-      if (r[0] === 'group') { el.append(h('tr', {class: 'tsg-duo-group'}, h('td', {colSpan: 3, text: r[1]}))); continue; }
+      if (r[0] === 'group') { body.append(h('tr', {class: 'tsg-duo-group'}, h('td', {colSpan: duos.length + 1, text: r[1]}))); continue; }
       const [label, get, fmt, cmp, sub] = r;
-      const va = get(A), vb = get(B);
-      const cell = (v, other, d) => {
+      const vals = duos.map((x) => get(x.r));
+      const nums = vals.filter((v) => typeof v === 'number');
+      const best = cmp && nums.length > 1 && new Set(nums).size > 1 ? Math.max(...nums) : null;
+      body.append(h('tr', null, h('td', {class: 'tsg-l', text: label}), duos.map((x, i) => {
+        const v = vals[i];
         const td = h('td', null, fmt === 'text' ? String(v) : T.fmt(fmt, v));
-        if (sub) td.append(h('div', {class: 'tsg-note', text: sub(d)}));
-        if (cmp && typeof v === 'number' && typeof other === 'number' && v > other) td.className = 'tsg-duo-best tsg-good';
-        if ((fmt === 'd2s' || fmt === 'ints') && typeof v === 'number' && v !== 0 && !td.className) td.className = v > 0 ? 'tsg-good' : 'tsg-bad';
+        if (sub) td.append(h('div', {class: 'tsg-note', text: sub(x.r)}));
+        if (best !== null && v === best) td.className = 'tsg-duo-best tsg-good';
+        else if ((fmt === 'd2s' || fmt === 'ints') && typeof v === 'number' && v !== 0) td.className = v > 0 ? 'tsg-good' : 'tsg-bad';
         return td;
-      };
-      el.append(h('tr', null, h('td', {class: 'tsg-l', text: label}), cell(va, vb, A), cell(vb, va, B)));
+      })));
     }
+    table.append(h('thead', null, head), body);
   });
 
   // ---------- Memory: Einstellungen auf diesem Gerät merken (nur eigenständige Version) ----------
