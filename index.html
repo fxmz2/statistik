@@ -98,6 +98,10 @@
   .tsg .tsg-lead li.tsg-more-row, .tsg .tsg-matchlist li.tsg-more-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm); border-bottom: 0; padding-top: var(--cds-pad-xs); }
   .tsg-more { font: inherit; font-size: var(--cds-font-size-caption); padding: 2px var(--cds-pad-md); border-radius: 999px; border: 1px solid var(--color-border-line); background: var(--color-bg); color: var(--color-fg); cursor: pointer; }
   .tsg-more:hover { border-color: var(--color-fg-muted); }
+  .tsg-cf { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); justify-content: flex-end; margin-bottom: calc(-1 * var(--cds-gap-xs)); }
+  .tsg .tsg-cf .tsg-select { font-size: var(--cds-font-size-caption); padding: 2px var(--cds-pad-sm); color: var(--color-fg-muted); background: transparent; max-width: 100%; }
+  .tsg .tsg-cf .tsg-select.tsg-cf-on { color: var(--color-fg); font-weight: 600; border-color: var(--color-fg); background: var(--color-bg); }
+  .tsg .tsg-card-scoped { border-color: var(--color-fg-muted); }
   .tsg-detail-bar { grid-column: 2 / 4; }
   .tsg .tsg-lead li.tsg-detail { display: block; }
   .tsg-dlist { list-style: none; margin: 0 0 var(--cds-gap-sm); padding: var(--cds-pad-xs) var(--cds-pad-sm); max-height: 22rem; overflow: auto; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-bg); display: flex; flex-direction: column; }
@@ -237,7 +241,8 @@
 
   <!-- ÜBERBLICK -->
   <section class="tsg-stack tsg-panel" id="ueberblick" role="tabpanel" aria-labelledby="tab-ueberblick">
-    <div class="tsg-card" id="rueckblick">
+    <div class="tsg-card" id="rueckblick" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-rueckblick" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-rueckblick" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <div class="tsg-card-head">
         <h2>Rückblick</h2>
         <select class="tsg-select tsg-rb-range" id="rb-range" aria-label="Zeitraum des Rückblicks">
@@ -263,7 +268,8 @@
       <div class="tsg-kpi"><p class="tsg-kpi-label">Elfmeter verwandelt</p><p class="tsg-kpi-num dash-skeleton" data-draw="kpi" data-k="penHit">—</p><p class="tsg-kpi-sub" data-draw="kpi" data-k="penOf">—</p></div>
     </div>
 
-    <div class="tsg-card" id="spotlights">
+    <div class="tsg-card" id="spotlights" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-spotlights" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-spotlights" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <h2>Auf einen Blick</h2>
       <div class="tsg-spots" data-source="spielerspiele">
         <button type="button" class="tsg-spot" data-spot="matches"><span class="tsg-kpi-label">Meiste Einsätze</span><span class="tsg-spot-name" data-draw="spot" data-part="name" data-metric="matches">—</span><span class="tsg-spot-val" data-draw="spot" data-part="val" data-metric="matches">—</span></button>
@@ -274,7 +280,8 @@
       <p class="tsg-note">Klick auf einen Namen öffnet das Spielerprofil.</p>
     </div>
 
-    <div class="tsg-card" id="saisonverlauf">
+    <div class="tsg-card" id="saisonverlauf" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-saisonverlauf" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-saisonverlauf" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <div class="tsg-card-head">
         <h2>Saisonverlauf</h2>
         <label class="tsg-field" for="season-metric">Kennzahl
@@ -291,17 +298,20 @@
       <h2 class="tsg-section-title">Bestenlisten</h2>
       <p class="tsg-note">Wähle für jede Liste eine Kennzahl. Quoten zählen erst ab der oben gewählten Zahl an Einsätzen. Klick auf einen Namen öffnet das Profil.</p>
       <div class="tsg-grid3">
-        <div class="tsg-card">
+        <div class="tsg-card" id="karte-1" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-karte-1" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-karte-1" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
           <div class="tsg-card-head"><select class="tsg-select tsg-lead-metric" id="lead1-metric" aria-label="Kennzahl Liste 1"><optgroup label="Summen"><option value="matches" data-fmt="int" data-desc="Ligaspiele mit Einsatz – Startelf oder eingewechselt." selected>Einsätze</option><option value="starts" data-fmt="int" data-desc="Ligaspiele, in denen er von Anfang an gespielt hat.">Startelf-Einsätze</option><option value="full" data-fmt="int" data-desc="Von Anfang an dabei und weder ausgewechselt noch vom Platz gestellt.">Durchgespielt</option><option value="notFull" data-fmt="int" data-desc="Eingewechselt, ausgewechselt oder vom Platz gestellt.">Nicht durchgespielt</option><option value="subIn" data-fmt="int" data-desc="Wie oft er eingewechselt wurde.">Einwechslungen</option><option value="subOut" data-fmt="int" data-desc="Wie oft er ausgewechselt wurde.">Auswechslungen</option><option value="minutes" data-fmt="int" data-desc="Minuten laut FuPa-Aufstellung.">Spielminuten</option><option value="goals" data-fmt="int" data-desc="Tore in Ligaspielen.">Tore</option><option value="assists" data-fmt="int" data-desc="Torvorlagen in Ligaspielen.">Vorlagen</option><option value="points" data-fmt="int" data-desc="Tore plus Vorlagen.">Scorerpunkte</option><option value="wins" data-fmt="int" data-desc="Gewonnene Ligaspiele, in denen er gespielt hat.">Siege mit Einsatz</option><option value="cards" data-fmt="int" data-desc="Gelbe, Gelb-Rote und Rote Karten zusammen.">Karten gesamt</option><option value="yellow" data-fmt="int">Gelbe Karten</option><option value="yellowRed" data-fmt="int">Gelb-Rote Karten</option><option value="red" data-fmt="int">Rote Karten</option><option value="penHit" data-fmt="int">Elfmeter verwandelt</option><option value="penMiss" data-fmt="int">Elfmeter verschossen</option><option value="seasons" data-fmt="int" data-desc="In wie vielen Saisons er mindestens einmal gespielt hat.">Saisons mit Einsatz</option><option value="maxStreak" data-fmt="int" data-desc="Die meisten aufeinanderfolgenden Saisons mit Einsatz.">Längste Serie (Saisons am Stück)</option></optgroup><optgroup label="Anteile"><option value="goalShare" data-fmt="pct" data-desc="Seine Tore geteilt durch alle Tore der Spieler in der Auswahl.">Anteil an allen Toren</option><option value="pointShare" data-fmt="pct" data-desc="Seine Scorerpunkte geteilt durch alle Scorerpunkte in der Auswahl.">Anteil an allen Scorerpunkten</option><option value="minutesShare" data-fmt="pct" data-desc="Seine Minuten geteilt durch alle Spielerminuten in der Auswahl.">Anteil an allen Spielminuten</option></optgroup><optgroup label="Quoten"><option value="minPerGoal" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Tore – weniger ist besser.">Minuten pro Tor</option><option value="minPerPoint" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Tore plus Vorlagen – weniger ist besser.">Minuten pro Scorerpunkt</option><option value="goalsPerGame" data-fmt="d2" data-rate="1" data-desc="Tore geteilt durch Einsätze.">Tore pro Spiel</option><option value="pointsPerGame" data-fmt="d2" data-rate="1" data-desc="Tore plus Vorlagen geteilt durch Einsätze.">Scorerpunkte pro Spiel</option><option value="goalsPer90" data-fmt="d2" data-rate="1" data-desc="Tore hochgerechnet auf ein volles Spiel.">Tore pro 90 Minuten</option><option value="minPerGame" data-fmt="int" data-rate="1" data-desc="Durchschnittliche Spielzeit pro Einsatz.">Ø Minuten pro Einsatz</option><option value="playRate" data-fmt="pct" data-rate="1" data-desc="Gespielte Minuten im Verhältnis zu Einsätze × 90.">Spielzeit-Quote</option><option value="startRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze von Anfang an.">Startelf-Quote</option><option value="fullRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze über volle 90 Minuten.">Quote durchgespielt</option><option value="notFullRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze mit Ein-/Auswechslung oder Platzverweis.">Quote nicht durchgespielt</option><option value="subInRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze, in denen er eingewechselt wurde.">Anteil Einwechslungen</option><option value="subOutRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze, in denen er ausgewechselt wurde.">Anteil Auswechslungen</option><option value="cardsPerGame" data-fmt="d2" data-rate="1" data-desc="Karten geteilt durch Einsätze.">Karten pro Spiel</option><option value="minPerCard" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Karten – weniger heißt öfter verwarnt.">Minuten pro Karte</option><option value="penRate" data-fmt="pct" data-rate="1" data-need="penTotal" data-needmin="3" data-desc="Verwandelte geteilt durch geschossene Elfmeter.">Elfmeter-Quote (ab 3 Elfmetern)</option></optgroup><optgroup label="Wirkung"><option value="ppgWith" data-fmt="d2" data-rate="1" data-desc="Durchschnittliche Punkte der Mannschaft in Ligaspielen, in denen er gespielt hat.">Punkte pro Spiel mit ihm</option><option value="ppgDiff" data-fmt="d2s" data-rate="1" data-desc="Punkte pro Spiel mit ihm minus Punkte pro Spiel ohne ihn (Spiele seiner Mannschaften mit Aufstellung).">Punkte pro Spiel: mit minus ohne ihn</option><option value="winWith" data-fmt="pct" data-rate="1" data-desc="Anteil gewonnener Spiele, in denen er gespielt hat.">Siegquote mit ihm</option><option value="plusMinus" data-fmt="ints" data-need="pmGames" data-needmin="1" data-desc="Tore minus Gegentore, während er auf dem Platz stand. Nur Spiele, für die FuPa alle Torminuten hat.">Plus/Minus auf dem Platz</option><option value="pmPer90" data-fmt="d2s" data-rate="1" data-desc="Plus/Minus auf dem Platz hochgerechnet auf 90 Minuten.">Plus/Minus pro 90 Minuten</option><option value="inGain" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Einwechslung, in Punkten: + heißt, danach wurde es besser.">Punkte nach Einwechslung (Summe)</option><option value="inGainAvg" data-fmt="d2s" data-need="inN" data-needmin="5" data-desc="Wie oben, geteilt durch die Zahl seiner Einwechslungen mit Torminuten.">Ø Punkte-Veränderung pro Einwechslung (ab 5)</option><option value="inGD" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Einwechslung bis Spielende.">Tordifferenz nach Einwechslung</option><option value="inImproved" data-fmt="int" data-need="inN" data-needmin="1" data-desc="Einwechslungen, nach denen das Spiel mehr Punkte brachte als beim Wechsel.">Einwechslungen mit besserem Ergebnis</option><option value="outGain" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Auswechslung, in Punkten.">Punkte nach Auswechslung (Summe)</option><option value="outGD" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Auswechslung bis Spielende.">Tordifferenz nach Auswechslung</option></optgroup></select><select class="tsg-select tsg-lead-dir" id="lead1-dir" aria-label="Reihenfolge Liste 1"><option value="best" selected>Beste zuerst</option><option value="worst">Schwächste zuerst</option></select></div>
           <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="lead1-metric">—</p>
           <ol class="tsg-lead dash-skeleton" id="lead-1" data-draw="lead" data-source="spielerspiele"></ol>
         </div>
-        <div class="tsg-card">
+        <div class="tsg-card" id="karte-2" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-karte-2" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-karte-2" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
           <div class="tsg-card-head"><select class="tsg-select tsg-lead-metric" id="lead2-metric" aria-label="Kennzahl Liste 2"><optgroup label="Summen"><option value="matches" data-fmt="int" data-desc="Ligaspiele mit Einsatz – Startelf oder eingewechselt.">Einsätze</option><option value="starts" data-fmt="int" data-desc="Ligaspiele, in denen er von Anfang an gespielt hat.">Startelf-Einsätze</option><option value="full" data-fmt="int" data-desc="Von Anfang an dabei und weder ausgewechselt noch vom Platz gestellt.">Durchgespielt</option><option value="notFull" data-fmt="int" data-desc="Eingewechselt, ausgewechselt oder vom Platz gestellt.">Nicht durchgespielt</option><option value="subIn" data-fmt="int" data-desc="Wie oft er eingewechselt wurde.">Einwechslungen</option><option value="subOut" data-fmt="int" data-desc="Wie oft er ausgewechselt wurde.">Auswechslungen</option><option value="minutes" data-fmt="int" data-desc="Minuten laut FuPa-Aufstellung.">Spielminuten</option><option value="goals" data-fmt="int" data-desc="Tore in Ligaspielen." selected>Tore</option><option value="assists" data-fmt="int" data-desc="Torvorlagen in Ligaspielen.">Vorlagen</option><option value="points" data-fmt="int" data-desc="Tore plus Vorlagen.">Scorerpunkte</option><option value="wins" data-fmt="int" data-desc="Gewonnene Ligaspiele, in denen er gespielt hat.">Siege mit Einsatz</option><option value="cards" data-fmt="int" data-desc="Gelbe, Gelb-Rote und Rote Karten zusammen.">Karten gesamt</option><option value="yellow" data-fmt="int">Gelbe Karten</option><option value="yellowRed" data-fmt="int">Gelb-Rote Karten</option><option value="red" data-fmt="int">Rote Karten</option><option value="penHit" data-fmt="int">Elfmeter verwandelt</option><option value="penMiss" data-fmt="int">Elfmeter verschossen</option><option value="seasons" data-fmt="int" data-desc="In wie vielen Saisons er mindestens einmal gespielt hat.">Saisons mit Einsatz</option><option value="maxStreak" data-fmt="int" data-desc="Die meisten aufeinanderfolgenden Saisons mit Einsatz.">Längste Serie (Saisons am Stück)</option></optgroup><optgroup label="Anteile"><option value="goalShare" data-fmt="pct" data-desc="Seine Tore geteilt durch alle Tore der Spieler in der Auswahl.">Anteil an allen Toren</option><option value="pointShare" data-fmt="pct" data-desc="Seine Scorerpunkte geteilt durch alle Scorerpunkte in der Auswahl.">Anteil an allen Scorerpunkten</option><option value="minutesShare" data-fmt="pct" data-desc="Seine Minuten geteilt durch alle Spielerminuten in der Auswahl.">Anteil an allen Spielminuten</option></optgroup><optgroup label="Quoten"><option value="minPerGoal" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Tore – weniger ist besser.">Minuten pro Tor</option><option value="minPerPoint" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Tore plus Vorlagen – weniger ist besser.">Minuten pro Scorerpunkt</option><option value="goalsPerGame" data-fmt="d2" data-rate="1" data-desc="Tore geteilt durch Einsätze.">Tore pro Spiel</option><option value="pointsPerGame" data-fmt="d2" data-rate="1" data-desc="Tore plus Vorlagen geteilt durch Einsätze.">Scorerpunkte pro Spiel</option><option value="goalsPer90" data-fmt="d2" data-rate="1" data-desc="Tore hochgerechnet auf ein volles Spiel.">Tore pro 90 Minuten</option><option value="minPerGame" data-fmt="int" data-rate="1" data-desc="Durchschnittliche Spielzeit pro Einsatz.">Ø Minuten pro Einsatz</option><option value="playRate" data-fmt="pct" data-rate="1" data-desc="Gespielte Minuten im Verhältnis zu Einsätze × 90.">Spielzeit-Quote</option><option value="startRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze von Anfang an.">Startelf-Quote</option><option value="fullRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze über volle 90 Minuten.">Quote durchgespielt</option><option value="notFullRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze mit Ein-/Auswechslung oder Platzverweis.">Quote nicht durchgespielt</option><option value="subInRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze, in denen er eingewechselt wurde.">Anteil Einwechslungen</option><option value="subOutRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze, in denen er ausgewechselt wurde.">Anteil Auswechslungen</option><option value="cardsPerGame" data-fmt="d2" data-rate="1" data-desc="Karten geteilt durch Einsätze.">Karten pro Spiel</option><option value="minPerCard" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Karten – weniger heißt öfter verwarnt.">Minuten pro Karte</option><option value="penRate" data-fmt="pct" data-rate="1" data-need="penTotal" data-needmin="3" data-desc="Verwandelte geteilt durch geschossene Elfmeter.">Elfmeter-Quote (ab 3 Elfmetern)</option></optgroup><optgroup label="Wirkung"><option value="ppgWith" data-fmt="d2" data-rate="1" data-desc="Durchschnittliche Punkte der Mannschaft in Ligaspielen, in denen er gespielt hat.">Punkte pro Spiel mit ihm</option><option value="ppgDiff" data-fmt="d2s" data-rate="1" data-desc="Punkte pro Spiel mit ihm minus Punkte pro Spiel ohne ihn (Spiele seiner Mannschaften mit Aufstellung).">Punkte pro Spiel: mit minus ohne ihn</option><option value="winWith" data-fmt="pct" data-rate="1" data-desc="Anteil gewonnener Spiele, in denen er gespielt hat.">Siegquote mit ihm</option><option value="plusMinus" data-fmt="ints" data-need="pmGames" data-needmin="1" data-desc="Tore minus Gegentore, während er auf dem Platz stand. Nur Spiele, für die FuPa alle Torminuten hat.">Plus/Minus auf dem Platz</option><option value="pmPer90" data-fmt="d2s" data-rate="1" data-desc="Plus/Minus auf dem Platz hochgerechnet auf 90 Minuten.">Plus/Minus pro 90 Minuten</option><option value="inGain" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Einwechslung, in Punkten: + heißt, danach wurde es besser.">Punkte nach Einwechslung (Summe)</option><option value="inGainAvg" data-fmt="d2s" data-need="inN" data-needmin="5" data-desc="Wie oben, geteilt durch die Zahl seiner Einwechslungen mit Torminuten.">Ø Punkte-Veränderung pro Einwechslung (ab 5)</option><option value="inGD" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Einwechslung bis Spielende.">Tordifferenz nach Einwechslung</option><option value="inImproved" data-fmt="int" data-need="inN" data-needmin="1" data-desc="Einwechslungen, nach denen das Spiel mehr Punkte brachte als beim Wechsel.">Einwechslungen mit besserem Ergebnis</option><option value="outGain" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Auswechslung, in Punkten.">Punkte nach Auswechslung (Summe)</option><option value="outGD" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Auswechslung bis Spielende.">Tordifferenz nach Auswechslung</option></optgroup></select><select class="tsg-select tsg-lead-dir" id="lead2-dir" aria-label="Reihenfolge Liste 2"><option value="best" selected>Beste zuerst</option><option value="worst">Schwächste zuerst</option></select></div>
           <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="lead2-metric">—</p>
           <ol class="tsg-lead dash-skeleton" id="lead-2" data-draw="lead" data-source="spielerspiele"></ol>
         </div>
-        <div class="tsg-card">
+        <div class="tsg-card" id="karte-3" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-karte-3" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-karte-3" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
           <div class="tsg-card-head"><select class="tsg-select tsg-lead-metric" id="lead3-metric" aria-label="Kennzahl Liste 3"><optgroup label="Summen"><option value="matches" data-fmt="int" data-desc="Ligaspiele mit Einsatz – Startelf oder eingewechselt.">Einsätze</option><option value="starts" data-fmt="int" data-desc="Ligaspiele, in denen er von Anfang an gespielt hat.">Startelf-Einsätze</option><option value="full" data-fmt="int" data-desc="Von Anfang an dabei und weder ausgewechselt noch vom Platz gestellt.">Durchgespielt</option><option value="notFull" data-fmt="int" data-desc="Eingewechselt, ausgewechselt oder vom Platz gestellt.">Nicht durchgespielt</option><option value="subIn" data-fmt="int" data-desc="Wie oft er eingewechselt wurde.">Einwechslungen</option><option value="subOut" data-fmt="int" data-desc="Wie oft er ausgewechselt wurde.">Auswechslungen</option><option value="minutes" data-fmt="int" data-desc="Minuten laut FuPa-Aufstellung.">Spielminuten</option><option value="goals" data-fmt="int" data-desc="Tore in Ligaspielen.">Tore</option><option value="assists" data-fmt="int" data-desc="Torvorlagen in Ligaspielen.">Vorlagen</option><option value="points" data-fmt="int" data-desc="Tore plus Vorlagen.">Scorerpunkte</option><option value="wins" data-fmt="int" data-desc="Gewonnene Ligaspiele, in denen er gespielt hat.">Siege mit Einsatz</option><option value="cards" data-fmt="int" data-desc="Gelbe, Gelb-Rote und Rote Karten zusammen.">Karten gesamt</option><option value="yellow" data-fmt="int">Gelbe Karten</option><option value="yellowRed" data-fmt="int">Gelb-Rote Karten</option><option value="red" data-fmt="int">Rote Karten</option><option value="penHit" data-fmt="int">Elfmeter verwandelt</option><option value="penMiss" data-fmt="int">Elfmeter verschossen</option><option value="seasons" data-fmt="int" data-desc="In wie vielen Saisons er mindestens einmal gespielt hat.">Saisons mit Einsatz</option><option value="maxStreak" data-fmt="int" data-desc="Die meisten aufeinanderfolgenden Saisons mit Einsatz.">Längste Serie (Saisons am Stück)</option></optgroup><optgroup label="Anteile"><option value="goalShare" data-fmt="pct" data-desc="Seine Tore geteilt durch alle Tore der Spieler in der Auswahl.">Anteil an allen Toren</option><option value="pointShare" data-fmt="pct" data-desc="Seine Scorerpunkte geteilt durch alle Scorerpunkte in der Auswahl.">Anteil an allen Scorerpunkten</option><option value="minutesShare" data-fmt="pct" data-desc="Seine Minuten geteilt durch alle Spielerminuten in der Auswahl.">Anteil an allen Spielminuten</option></optgroup><optgroup label="Quoten"><option value="minPerGoal" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Tore – weniger ist besser." selected>Minuten pro Tor</option><option value="minPerPoint" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Tore plus Vorlagen – weniger ist besser.">Minuten pro Scorerpunkt</option><option value="goalsPerGame" data-fmt="d2" data-rate="1" data-desc="Tore geteilt durch Einsätze.">Tore pro Spiel</option><option value="pointsPerGame" data-fmt="d2" data-rate="1" data-desc="Tore plus Vorlagen geteilt durch Einsätze.">Scorerpunkte pro Spiel</option><option value="goalsPer90" data-fmt="d2" data-rate="1" data-desc="Tore hochgerechnet auf ein volles Spiel.">Tore pro 90 Minuten</option><option value="minPerGame" data-fmt="int" data-rate="1" data-desc="Durchschnittliche Spielzeit pro Einsatz.">Ø Minuten pro Einsatz</option><option value="playRate" data-fmt="pct" data-rate="1" data-desc="Gespielte Minuten im Verhältnis zu Einsätze × 90.">Spielzeit-Quote</option><option value="startRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze von Anfang an.">Startelf-Quote</option><option value="fullRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze über volle 90 Minuten.">Quote durchgespielt</option><option value="notFullRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze mit Ein-/Auswechslung oder Platzverweis.">Quote nicht durchgespielt</option><option value="subInRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze, in denen er eingewechselt wurde.">Anteil Einwechslungen</option><option value="subOutRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze, in denen er ausgewechselt wurde.">Anteil Auswechslungen</option><option value="cardsPerGame" data-fmt="d2" data-rate="1" data-desc="Karten geteilt durch Einsätze.">Karten pro Spiel</option><option value="minPerCard" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Karten – weniger heißt öfter verwarnt.">Minuten pro Karte</option><option value="penRate" data-fmt="pct" data-rate="1" data-need="penTotal" data-needmin="3" data-desc="Verwandelte geteilt durch geschossene Elfmeter.">Elfmeter-Quote (ab 3 Elfmetern)</option></optgroup><optgroup label="Wirkung"><option value="ppgWith" data-fmt="d2" data-rate="1" data-desc="Durchschnittliche Punkte der Mannschaft in Ligaspielen, in denen er gespielt hat.">Punkte pro Spiel mit ihm</option><option value="ppgDiff" data-fmt="d2s" data-rate="1" data-desc="Punkte pro Spiel mit ihm minus Punkte pro Spiel ohne ihn (Spiele seiner Mannschaften mit Aufstellung).">Punkte pro Spiel: mit minus ohne ihn</option><option value="winWith" data-fmt="pct" data-rate="1" data-desc="Anteil gewonnener Spiele, in denen er gespielt hat.">Siegquote mit ihm</option><option value="plusMinus" data-fmt="ints" data-need="pmGames" data-needmin="1" data-desc="Tore minus Gegentore, während er auf dem Platz stand. Nur Spiele, für die FuPa alle Torminuten hat.">Plus/Minus auf dem Platz</option><option value="pmPer90" data-fmt="d2s" data-rate="1" data-desc="Plus/Minus auf dem Platz hochgerechnet auf 90 Minuten.">Plus/Minus pro 90 Minuten</option><option value="inGain" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Einwechslung, in Punkten: + heißt, danach wurde es besser.">Punkte nach Einwechslung (Summe)</option><option value="inGainAvg" data-fmt="d2s" data-need="inN" data-needmin="5" data-desc="Wie oben, geteilt durch die Zahl seiner Einwechslungen mit Torminuten.">Ø Punkte-Veränderung pro Einwechslung (ab 5)</option><option value="inGD" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Einwechslung bis Spielende.">Tordifferenz nach Einwechslung</option><option value="inImproved" data-fmt="int" data-need="inN" data-needmin="1" data-desc="Einwechslungen, nach denen das Spiel mehr Punkte brachte als beim Wechsel.">Einwechslungen mit besserem Ergebnis</option><option value="outGain" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Auswechslung, in Punkten.">Punkte nach Auswechslung (Summe)</option><option value="outGD" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Auswechslung bis Spielende.">Tordifferenz nach Auswechslung</option></optgroup></select><select class="tsg-select tsg-lead-dir" id="lead3-dir" aria-label="Reihenfolge Liste 3"><option value="best" selected>Beste zuerst</option><option value="worst">Schwächste zuerst</option></select></div>
           <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="lead3-metric">—</p>
           <ol class="tsg-lead dash-skeleton" id="lead-3" data-draw="lead" data-source="spielerspiele"></ol>
@@ -312,7 +322,8 @@
 
   <!-- SPIELER -->
   <section class="tsg-stack tsg-panel" id="spieler" role="tabpanel" aria-labelledby="tab-spieler" hidden>
-    <div class="tsg-card" id="spielerprofil">
+    <div class="tsg-card" id="spielerprofil" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-spielerprofil" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-spielerprofil" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <div class="tsg-card-head">
         <h2>Spielerprofil</h2>
         <label class="tsg-field" for="profil-spieler">Spieler
@@ -373,7 +384,8 @@
       </div>
     </div>
 
-    <div class="tsg-card" id="spielerbilanz">
+    <div class="tsg-card" id="spielerbilanz" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-spielerbilanz" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-spielerbilanz" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <div class="tsg-card-head">
         <h2>Bilanz von <span data-draw="pval" data-field="name" data-fmt="text">—</span></h2>
         <div class="tsg-row tsg-bviewpick" role="group" aria-label="Bilanz-Ansicht">
@@ -437,7 +449,8 @@
       </div>
     </div>
 
-    <div class="tsg-card" id="alle-spieler">
+    <div class="tsg-card" id="alle-spieler" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-alle-spieler" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-alle-spieler" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <div class="tsg-tools">
         <h2>Alle Spieler</h2>
         <input class="tsg-search" id="spielersuche" type="search" placeholder="Spieler suchen" aria-label="Spieler suchen">
@@ -522,12 +535,14 @@
     </div>
 
     <div class="tsg-grid2">
-      <div class="tsg-card" id="wechselzeitpunkt">
+      <div class="tsg-card" id="wechselzeitpunkt" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-wechselzeitpunkt" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-wechselzeitpunkt" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h2>Wann wird eingewechselt?</h2>
         <p class="tsg-note">Einwechslungen nach Spielminute.</p>
         <div class="tsg-chart tsg-chart-sm dash-skeleton" data-draw="subhist" data-source="spielerspiele"></div>
       </div>
-      <div class="tsg-card" id="wechselstand">
+      <div class="tsg-card" id="wechselstand" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-wechselstand" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-wechselstand" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <div class="tsg-card-head">
           <h2>Wirkung nach Spielstand</h2>
           <select class="tsg-select tsg-state-kind" id="state-kind" aria-label="Ein- oder Auswechslungen">
@@ -556,17 +571,20 @@
     <div class="tsg-head">
       <h2 class="tsg-section-title">Joker, Auswechslungen und Plus/Minus</h2>
       <div class="tsg-grid3">
-        <div class="tsg-card">
+        <div class="tsg-card" id="karte-4" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-karte-4" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-karte-4" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
           <div class="tsg-card-head"><select class="tsg-select tsg-lead-metric" id="lead4-metric" aria-label="Kennzahl Liste Wirkung 1"><optgroup label="Wirkung"><option value="ppgWith" data-fmt="d2" data-rate="1" data-desc="Durchschnittliche Punkte der Mannschaft in Ligaspielen, in denen er gespielt hat.">Punkte pro Spiel mit ihm</option><option value="ppgDiff" data-fmt="d2s" data-rate="1" data-desc="Punkte pro Spiel mit ihm minus Punkte pro Spiel ohne ihn (Spiele seiner Mannschaften mit Aufstellung).">Punkte pro Spiel: mit minus ohne ihn</option><option value="winWith" data-fmt="pct" data-rate="1" data-desc="Anteil gewonnener Spiele, in denen er gespielt hat.">Siegquote mit ihm</option><option value="plusMinus" data-fmt="ints" data-need="pmGames" data-needmin="1" data-desc="Tore minus Gegentore, während er auf dem Platz stand. Nur Spiele, für die FuPa alle Torminuten hat.">Plus/Minus auf dem Platz</option><option value="pmPer90" data-fmt="d2s" data-rate="1" data-desc="Plus/Minus auf dem Platz hochgerechnet auf 90 Minuten.">Plus/Minus pro 90 Minuten</option><option value="inGain" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Einwechslung, in Punkten: + heißt, danach wurde es besser." selected>Punkte nach Einwechslung (Summe)</option><option value="inGainAvg" data-fmt="d2s" data-need="inN" data-needmin="5" data-desc="Wie oben, geteilt durch die Zahl seiner Einwechslungen mit Torminuten.">Ø Punkte-Veränderung pro Einwechslung (ab 5)</option><option value="inGD" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Einwechslung bis Spielende.">Tordifferenz nach Einwechslung</option><option value="inImproved" data-fmt="int" data-need="inN" data-needmin="1" data-desc="Einwechslungen, nach denen das Spiel mehr Punkte brachte als beim Wechsel.">Einwechslungen mit besserem Ergebnis</option><option value="outGain" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Auswechslung, in Punkten.">Punkte nach Auswechslung (Summe)</option><option value="outGD" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Auswechslung bis Spielende.">Tordifferenz nach Auswechslung</option></optgroup></select><select class="tsg-select tsg-lead-dir" id="lead4-dir" aria-label="Reihenfolge"><option value="best" selected>Beste zuerst</option><option value="worst">Schwächste zuerst</option></select></div>
           <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="lead4-metric">—</p>
           <ol class="tsg-lead dash-skeleton" data-draw="lead" data-source="spielerspiele"></ol>
         </div>
-        <div class="tsg-card">
+        <div class="tsg-card" id="karte-5" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-karte-5" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-karte-5" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
           <div class="tsg-card-head"><select class="tsg-select tsg-lead-metric" id="lead5-metric" aria-label="Kennzahl Liste Wirkung 2"><optgroup label="Wirkung"><option value="ppgWith" data-fmt="d2" data-rate="1" data-desc="Durchschnittliche Punkte der Mannschaft in Ligaspielen, in denen er gespielt hat.">Punkte pro Spiel mit ihm</option><option value="ppgDiff" data-fmt="d2s" data-rate="1" data-desc="Punkte pro Spiel mit ihm minus Punkte pro Spiel ohne ihn (Spiele seiner Mannschaften mit Aufstellung).">Punkte pro Spiel: mit minus ohne ihn</option><option value="winWith" data-fmt="pct" data-rate="1" data-desc="Anteil gewonnener Spiele, in denen er gespielt hat.">Siegquote mit ihm</option><option value="plusMinus" data-fmt="ints" data-need="pmGames" data-needmin="1" data-desc="Tore minus Gegentore, während er auf dem Platz stand. Nur Spiele, für die FuPa alle Torminuten hat.">Plus/Minus auf dem Platz</option><option value="pmPer90" data-fmt="d2s" data-rate="1" data-desc="Plus/Minus auf dem Platz hochgerechnet auf 90 Minuten.">Plus/Minus pro 90 Minuten</option><option value="inGain" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Einwechslung, in Punkten: + heißt, danach wurde es besser.">Punkte nach Einwechslung (Summe)</option><option value="inGainAvg" data-fmt="d2s" data-need="inN" data-needmin="5" data-desc="Wie oben, geteilt durch die Zahl seiner Einwechslungen mit Torminuten.">Ø Punkte-Veränderung pro Einwechslung (ab 5)</option><option value="inGD" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Einwechslung bis Spielende.">Tordifferenz nach Einwechslung</option><option value="inImproved" data-fmt="int" data-need="inN" data-needmin="1" data-desc="Einwechslungen, nach denen das Spiel mehr Punkte brachte als beim Wechsel.">Einwechslungen mit besserem Ergebnis</option><option value="outGain" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Auswechslung, in Punkten." selected>Punkte nach Auswechslung (Summe)</option><option value="outGD" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Auswechslung bis Spielende.">Tordifferenz nach Auswechslung</option></optgroup></select><select class="tsg-select tsg-lead-dir" id="lead5-dir" aria-label="Reihenfolge"><option value="best" selected>Beste zuerst</option><option value="worst">Schwächste zuerst</option></select></div>
           <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="lead5-metric">—</p>
           <ol class="tsg-lead dash-skeleton" data-draw="lead" data-source="spielerspiele"></ol>
         </div>
-        <div class="tsg-card">
+        <div class="tsg-card" id="karte-6" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-karte-6" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-karte-6" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
           <div class="tsg-card-head"><select class="tsg-select tsg-lead-metric" id="lead6-metric" aria-label="Kennzahl Liste Wirkung 3"><optgroup label="Wirkung"><option value="ppgWith" data-fmt="d2" data-rate="1" data-desc="Durchschnittliche Punkte der Mannschaft in Ligaspielen, in denen er gespielt hat.">Punkte pro Spiel mit ihm</option><option value="ppgDiff" data-fmt="d2s" data-rate="1" data-desc="Punkte pro Spiel mit ihm minus Punkte pro Spiel ohne ihn (Spiele seiner Mannschaften mit Aufstellung).">Punkte pro Spiel: mit minus ohne ihn</option><option value="winWith" data-fmt="pct" data-rate="1" data-desc="Anteil gewonnener Spiele, in denen er gespielt hat.">Siegquote mit ihm</option><option value="plusMinus" data-fmt="ints" data-need="pmGames" data-needmin="1" data-desc="Tore minus Gegentore, während er auf dem Platz stand. Nur Spiele, für die FuPa alle Torminuten hat.">Plus/Minus auf dem Platz</option><option value="pmPer90" data-fmt="d2s" data-rate="1" data-desc="Plus/Minus auf dem Platz hochgerechnet auf 90 Minuten." selected>Plus/Minus pro 90 Minuten</option><option value="inGain" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Einwechslung, in Punkten: + heißt, danach wurde es besser.">Punkte nach Einwechslung (Summe)</option><option value="inGainAvg" data-fmt="d2s" data-need="inN" data-needmin="5" data-desc="Wie oben, geteilt durch die Zahl seiner Einwechslungen mit Torminuten.">Ø Punkte-Veränderung pro Einwechslung (ab 5)</option><option value="inGD" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Einwechslung bis Spielende.">Tordifferenz nach Einwechslung</option><option value="inImproved" data-fmt="int" data-need="inN" data-needmin="1" data-desc="Einwechslungen, nach denen das Spiel mehr Punkte brachte als beim Wechsel.">Einwechslungen mit besserem Ergebnis</option><option value="outGain" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Auswechslung, in Punkten.">Punkte nach Auswechslung (Summe)</option><option value="outGD" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Auswechslung bis Spielende.">Tordifferenz nach Auswechslung</option></optgroup></select><select class="tsg-select tsg-lead-dir" id="lead6-dir" aria-label="Reihenfolge"><option value="best" selected>Beste zuerst</option><option value="worst">Schwächste zuerst</option></select></div>
           <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="lead6-metric">—</p>
           <ol class="tsg-lead dash-skeleton" data-draw="lead" data-source="spielerspiele"></ol>
@@ -574,7 +592,8 @@
       </div>
     </div>
 
-    <div class="tsg-card" id="mit-ohne">
+    <div class="tsg-card" id="mit-ohne" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-mit-ohne" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-mit-ohne" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <h2>Mit wem punkten wir?</h2>
       <p class="tsg-note">Punkte pro Spiel und Siegquote in Ligaspielen mit und ohne den Spieler. „Ohne“ zählt Spiele seiner Mannschaften mit Aufstellung, in denen er nicht gespielt hat. Es zählen Spieler mit der oben gewählten Mindestzahl an Einsätzen.</p>
       <div class="tsg-tablewrap">
@@ -597,7 +616,8 @@
 
   <!-- KADER -->
   <section class="tsg-stack tsg-panel" id="kader" role="tabpanel" aria-labelledby="tab-kader" hidden>
-    <div class="tsg-card" id="kaderentwicklung">
+    <div class="tsg-card" id="kaderentwicklung" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-kaderentwicklung" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-kaderentwicklung" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <div class="tsg-card-head">
         <h2>Kaderentwicklung</h2>
         <select class="tsg-select tsg-kader-view" id="kader-view" aria-label="Ansicht Kaderentwicklung">
@@ -610,13 +630,15 @@
       <div class="tsg-chart dash-skeleton" id="chart-kader" data-draw="kaderchart" data-source="spielerspiele"></div>
     </div>
     <div class="tsg-grid2">
-      <div class="tsg-card" id="durchlaessigkeit">
+      <div class="tsg-card" id="durchlaessigkeit" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-durchlaessigkeit" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-durchlaessigkeit" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h2>Durchlässigkeit 1. Mannschaft ↔ II</h2>
         <p class="tsg-note">Gilt immer für beide Mannschaften im gewählten Zeitraum.</p>
         <div class="tsg-legend"><span><i class="tsg-sw" data-sw="mix"></i>In beiden Teams eingesetzt</span><span><i class="tsg-sw" data-sw="up"></i>Erstmals in der 1., vorher in der II</span></div>
         <div class="tsg-chart dash-skeleton" data-draw="durchchart" data-source="spielerspiele"></div>
       </div>
-      <div class="tsg-card" id="treue">
+      <div class="tsg-card" id="treue" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-treue" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-treue" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <div class="tsg-card-head">
           <h2>Treue und Konstanz</h2>
           <select class="tsg-select tsg-lead-metric" id="lead7-metric" aria-label="Kennzahl Treue">
@@ -630,7 +652,8 @@
         <ol class="tsg-lead dash-skeleton" data-draw="lead" data-source="spielerspiele"></ol>
       </div>
     </div>
-    <div class="tsg-card" id="beide-teams">
+    <div class="tsg-card" id="beide-teams" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-beide-teams" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-beide-teams" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <h2>Spieler in beiden Mannschaften</h2>
       <p class="tsg-note">„II → 1.“: zuerst in der II (bzw. Reserve) eingesetzt, „1. → II“: zuerst in der 1. Mannschaft, „gleichzeitig“: in derselben Saison begonnen.</p>
       <div class="tsg-tablewrap">
@@ -661,13 +684,15 @@
       <div class="tsg-kpi"><p class="tsg-kpi-label">Tore : Gegentore</p><p class="tsg-kpi-num dash-skeleton" data-draw="bkpi" data-k="goals">—</p><p class="tsg-kpi-sub" data-draw="bkpi" data-k="gpg">—</p></div>
       <div class="tsg-kpi"><p class="tsg-kpi-label">Meisterschaften</p><p class="tsg-kpi-num dash-skeleton" data-draw="bkpi" data-k="titles">—</p><p class="tsg-kpi-sub" data-draw="bkpi" data-k="avgRank">—</p></div>
     </div>
-    <div class="tsg-card" id="platzierungen">
+    <div class="tsg-card" id="platzierungen" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-platzierungen" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-platzierungen" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <h2>Platzierungen</h2>
       <p class="tsg-note">Tabellenplatz am Saisonende (laufende Saison: aktueller Stand). Oben ist Platz 1.</p>
       <div class="tsg-legend" data-draw="legend" data-source="tabellen"></div>
       <div class="tsg-chart dash-skeleton" data-draw="platzchart" data-source="tabellen"></div>
     </div>
-    <div class="tsg-card" id="saisontabelle">
+    <div class="tsg-card" id="saisontabelle" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-saisontabelle" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-saisontabelle" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <h2>Alle Saisons</h2>
       <div class="tsg-tablewrap tsg-tablewrap-sm">
         <table class="tsg-table" id="tbl-tabellen" data-source="tabellen" data-row-key="season,teamId">
@@ -690,7 +715,8 @@
       </div>
     </div>
     <div class="tsg-grid3">
-      <div class="tsg-card" id="heim-auswaerts">
+      <div class="tsg-card" id="heim-auswaerts" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-heim-auswaerts" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-heim-auswaerts" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h2>Heim und Auswärts</h2>
         <div class="tsg-tablewrap">
           <table class="tsg-table" id="tbl-heim" data-source="spiele">
@@ -706,16 +732,19 @@
           </table>
         </div>
       </div>
-      <div class="tsg-card" id="hoechste-siege">
+      <div class="tsg-card" id="hoechste-siege" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-hoechste-siege" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-hoechste-siege" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h2>Höchste Siege</h2>
         <ol class="tsg-matchlist dash-skeleton" data-draw="spielliste" data-kind="S" data-source="spiele"></ol>
       </div>
-      <div class="tsg-card" id="hoechste-niederlagen">
+      <div class="tsg-card" id="hoechste-niederlagen" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-hoechste-niederlagen" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-hoechste-niederlagen" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h2>Höchste Niederlagen</h2>
         <ol class="tsg-matchlist dash-skeleton" data-draw="spielliste" data-kind="N" data-source="spiele"></ol>
       </div>
     </div>
-    <div class="tsg-card" id="gegner">
+    <div class="tsg-card" id="gegner" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-gegner" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-gegner" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <div class="tsg-tools">
         <h2>Bilanz gegen Gegner</h2>
         <input class="tsg-search" id="gegnersuche" type="search" placeholder="Gegner suchen" aria-label="Gegner suchen">
@@ -740,7 +769,8 @@
 
   <!-- REKORDE -->
   <section class="tsg-stack tsg-panel" id="rekorde" role="tabpanel" aria-labelledby="tab-rekorde" hidden>
-    <div class="tsg-card" id="meilensteine">
+    <div class="tsg-card" id="meilensteine" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-meilensteine" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-meilensteine" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <div class="tsg-card-head">
         <h2>Meilensteine</h2>
         <select class="tsg-select tsg-ms-cat" id="ms-cat" aria-label="Kategorie der Meilensteine">
@@ -766,7 +796,8 @@
       </div>
     </div>
     <div class="tsg-grid2">
-      <div class="tsg-card" id="einzelsaisons">
+      <div class="tsg-card" id="einzelsaisons" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-einzelsaisons" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-einzelsaisons" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <div class="tsg-card-head">
           <h2>Beste Einzelsaisons</h2>
           <select class="tsg-select tsg-best-metric" id="best-metric" aria-label="Kennzahl der besten Einzelsaisons">
@@ -786,7 +817,8 @@
         <ol class="tsg-lead dash-skeleton" data-draw="bestseason" data-source="spielerspiele"></ol>
       </div>
     </div>
-    <div class="tsg-card" id="torjaeger">
+    <div class="tsg-card" id="torjaeger" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-torjaeger" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-torjaeger" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <div class="tsg-card-head">
         <h2>Abhängigkeit von den Torjägern</h2>
         <select class="tsg-select tsg-tj-metric" id="tj-metric" aria-label="Kennzahl Torjäger">
@@ -804,61 +836,71 @@
   <section class="tsg-stack tsg-panel" id="fakten" role="tabpanel" aria-labelledby="tab-fakten" hidden>
     <p class="tsg-intro">Allgemeine und kuriose Werte zu den Spielern in der Auswahl (Mannschaft und Zeitraum). Klick auf einen Namen öffnet das Profil.</p>
     <div class="tsg-grid3">
-      <div class="tsg-card" id="fakt-noGoal">
+      <div class="tsg-card" id="fakt-noGoal" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-fakt-noGoal" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-fakt-noGoal" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h3>Meiste Einsätze ohne Tor</h3>
         <p class="tsg-note">Spieler, die in der Auswahl noch kein Ligator erzielt haben.</p>
         <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="noGoal" data-source="spielerspiele spiele">—</p>
         <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="noGoal" data-source="spielerspiele spiele"></ol>
       </div>
-      <div class="tsg-card" id="fakt-noCard">
+      <div class="tsg-card" id="fakt-noCard" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-fakt-noCard" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-fakt-noCard" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h3>Nie verwarnt</h3>
         <p class="tsg-note">Meiste Einsätze ohne Gelbe, Gelb-Rote oder Rote Karte.</p>
         <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="noCard" data-source="spielerspiele spiele">—</p>
         <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="noCard" data-source="spielerspiele spiele"></ol>
       </div>
-      <div class="tsg-card" id="fakt-appStreak">
+      <div class="tsg-card" id="fakt-appStreak" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-fakt-appStreak" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-fakt-appStreak" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h3>Meiste Spiele in Folge</h3>
         <p class="tsg-note">Ligaspiele seiner Mannschaft am Stück mit Einsatz (nur Spiele mit Aufstellung).</p>
         <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="appStreak" data-source="spielerspiele spiele">—</p>
         <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="appStreak" data-source="spielerspiele spiele"></ol>
       </div>
-      <div class="tsg-card" id="fakt-unbeaten">
+      <div class="tsg-card" id="fakt-unbeaten" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-fakt-unbeaten" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-fakt-unbeaten" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h3>Ungeschlagen in Folge</h3>
         <p class="tsg-note">Eigene Einsätze am Stück ohne Niederlage.</p>
         <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="unbeaten" data-source="spielerspiele spiele">—</p>
         <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="unbeaten" data-source="spielerspiele spiele"></ol>
       </div>
-      <div class="tsg-card" id="fakt-goalStreak">
+      <div class="tsg-card" id="fakt-goalStreak" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-fakt-goalStreak" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-fakt-goalStreak" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h3>Längste Torserie</h3>
         <p class="tsg-note">Eigene Einsätze am Stück mit mindestens einem Tor.</p>
         <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="goalStreak" data-source="spielerspiele spiele">—</p>
         <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="goalStreak" data-source="spielerspiele spiele"></ol>
       </div>
-      <div class="tsg-card" id="fakt-drought">
+      <div class="tsg-card" id="fakt-drought" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-fakt-drought" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-fakt-drought" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h3>Längste Durststrecke</h3>
         <p class="tsg-note">Eigene Einsätze am Stück ohne Tor, nur Spieler mit mindestens einem Tor.</p>
         <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="drought" data-source="spielerspiele spiele">—</p>
         <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="drought" data-source="spielerspiele spiele"></ol>
       </div>
-      <div class="tsg-card" id="fakt-superSub">
+      <div class="tsg-card" id="fakt-superSub" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-fakt-superSub" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-fakt-superSub" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h3>Joker-Tore</h3>
         <p class="tsg-note">Tore nach Einwechslung.</p>
         <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="superSub" data-source="spielerspiele spiele">—</p>
         <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="superSub" data-source="spielerspiele spiele"></ol>
       </div>
-      <div class="tsg-card" id="fakt-multi">
+      <div class="tsg-card" id="fakt-multi" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-fakt-multi" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-fakt-multi" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h3>Mehrfach getroffen</h3>
         <p class="tsg-note">Spiele mit mindestens zwei eigenen Toren.</p>
         <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="multi" data-source="spielerspiele spiele">—</p>
         <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="multi" data-source="spielerspiele spiele"></ol>
       </div>
-      <div class="tsg-card" id="fakt-debutGoal">
+      <div class="tsg-card" id="fakt-debutGoal" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-fakt-debutGoal" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-fakt-debutGoal" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h3>Tor beim Debüt</h3>
         <p class="tsg-note">Spieler, die gleich in ihrem ersten erfassten Einsatz getroffen haben.</p>
         <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="debutGoal" data-source="spielerspiele spiele">—</p>
         <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="debutGoal" data-source="spielerspiele spiele"></ol>
       </div>
-      <div class="tsg-card" id="fakt-oneTimers">
+      <div class="tsg-card" id="fakt-oneTimers" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-fakt-oneTimers" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-fakt-oneTimers" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
         <h3>Einmal dabei</h3>
         <p class="tsg-note">Spieler mit genau einem Einsatz in den gewählten Mannschaften.</p>
         <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="oneTimers" data-source="spielerspiele spiele">—</p>
@@ -870,7 +912,8 @@
   <!-- DATENQUALITÄT -->
   <section class="tsg-stack tsg-panel" id="daten" role="tabpanel" aria-labelledby="tab-daten" hidden>
     <p class="tsg-intro">Wie vollständig sind die FuPa-Daten? Je vollständiger die Aufstellungen und Torminuten, desto genauer werden Spielerwerte, Minuten und die Wechsel-Auswertung. Die Liste unten zeigt, wo noch etwas fehlt, mit Link zum Spiel auf FuPa.</p>
-    <div class="tsg-card" id="abdeckung">
+    <div class="tsg-card" id="abdeckung" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-abdeckung" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-abdeckung" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <h2>Abdeckung je Saison</h2>
       <div class="tsg-tablewrap tsg-tablewrap-sm">
         <table class="tsg-table" id="tbl-abdeckung" data-source="spiele">
@@ -888,7 +931,8 @@
         </table>
       </div>
     </div>
-    <div class="tsg-card" id="abweichungen">
+    <div class="tsg-card" id="abweichungen" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-abweichungen" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-abweichungen" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <h2>Abweichungen zur FuPa-Spielerstatistik</h2>
       <p class="tsg-note">Spieler-Saisons, in denen die Summe aus den Aufstellungen nicht zur Saisonstatistik auf der FuPa-Teamseite passt. Meist fehlt ein Tor oder Einsatz in einer einzelnen Spiel-Aufstellung.</p>
       <div class="tsg-tablewrap tsg-tablewrap-sm">
@@ -909,7 +953,8 @@
       </div>
       <p class="tsg-note tsg-abw-none" hidden>Keine Abweichungen in dieser Auswahl.</p>
     </div>
-    <div class="tsg-card" id="fehlend">
+    <div class="tsg-card" id="fehlend" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-fehlend" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-fehlend" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <div class="tsg-card-head">
         <h2>Spiele zum Nachtragen</h2>
         <select class="tsg-select tsg-missing" id="missing-kind" aria-label="Was fehlt">
