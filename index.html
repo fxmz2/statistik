@@ -114,6 +114,14 @@
     #tbl-games tr.tsg-gamerow td:nth-child(2) { white-space: normal; }
     #tbl-games td, #tbl-games .tsg-th button { padding-inline: 5px; }
   }
+  .tsg .tsg-tablewrap-free { max-height: none; }
+  .tsg-duo-pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: var(--cds-gap-sm) var(--cds-gap-lg); }
+  .tsg-duo-side { display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
+  .tsg-duo-side .tsg-flabel { display: inline-flex; align-items: center; gap: 6px; }
+  .tsg .tsg-duo-table th:not(:first-child) { text-align: right; }
+  .tsg .tsg-duo-table td { white-space: normal; }
+  .tsg .tsg-duo-table td.tsg-duo-best { font-weight: 700; }
+  .tsg .tsg-duo-table tr.tsg-duo-group td { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); text-transform: uppercase; letter-spacing: .04em; padding-top: var(--cds-pad-md); }
   .tsg-gd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--cds-gap-sm) var(--cds-gap-lg); }
   .tsg-detail-bar { grid-column: 2 / 4; }
   .tsg .tsg-lead li.tsg-detail { display: block; }
@@ -460,6 +468,27 @@
           </table>
         </div>
       </div>
+    </div>
+
+    <div class="tsg-card" id="duo-vergleich" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-duo-vergleich" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-duo-vergleich" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
+      <h2>Duo-Vergleich</h2>
+      <p class="tsg-note">Zwei Spieler-Paare im direkten Vergleich: Wie läuft es, wenn beide im selben Ligaspiel eingesetzt waren, und wie, wenn nur einer dabei war? Der bessere Wert ist markiert.</p>
+      <div class="tsg-duo-pick">
+        <div class="tsg-duo-side"><span class="tsg-flabel"><i class="tsg-sw" data-sw="up"></i> Duo A</span><select class="tsg-select tsg-duo-sel" id="duo-a1" data-slot="a1" aria-label="Duo A, erster Spieler" data-draw="duowahl" data-source="spielerspiele"></select><select class="tsg-select tsg-duo-sel" id="duo-a2" data-slot="a2" aria-label="Duo A, zweiter Spieler" data-draw="duowahl" data-source="spielerspiele"></select></div>
+        <div class="tsg-duo-side"><span class="tsg-flabel"><i class="tsg-sw" data-sw="neu"></i> Duo B</span><select class="tsg-select tsg-duo-sel" id="duo-b1" data-slot="b1" aria-label="Duo B, erster Spieler" data-draw="duowahl" data-source="spielerspiele"></select><select class="tsg-select tsg-duo-sel" id="duo-b2" data-slot="b2" aria-label="Duo B, zweiter Spieler" data-draw="duowahl" data-source="spielerspiele"></select></div>
+      </div>
+      <div class="tsg-tablewrap tsg-tablewrap-free">
+        <table class="tsg-table tsg-duo-table" id="tbl-duo" data-source="spielerspiele spiele tore">
+          <thead><tr>
+            <th class="tsg-l"><span class="tsg-detail-th">Kennzahl</span></th>
+            <th><span class="tsg-detail-th" data-draw="duoname" data-duo="a">Duo A</span></th>
+            <th><span class="tsg-detail-th" data-draw="duoname" data-duo="b">Duo B</span></th>
+          </tr></thead>
+          <tbody data-draw="duotabelle"></tbody>
+        </table>
+      </div>
+      <p class="tsg-note">„Gemeinsam auf dem Platz“ und Plus/Minus nur aus Spielen, in denen FuPa alle Torminuten kennt. „Nur einer dabei“ zählt Spiele, in denen der eine gespielt hat und der andere nicht.</p>
     </div>
 
     <div class="tsg-card" id="alle-spiele" data-scope="1">

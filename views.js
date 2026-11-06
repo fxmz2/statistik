@@ -2,7 +2,7 @@
 (() => {
   const T = window.tsg;
   const h = T.h;
-  const ALL = ['cfrange', 'gamessum', 'spieltabelle', 'seasonsel', 'summary', 'kpi', 'kpisplit', 'spot', 'mdesc', 'legend', 'saisonchart', 'lead', 'profilwahl', 'pval', 'profilchart', 'profilspiele',
+  const ALL = ['cfrange', 'duowahl', 'duoname', 'duotabelle', 'gamessum', 'spieltabelle', 'seasonsel', 'summary', 'kpi', 'kpisplit', 'spot', 'mdesc', 'legend', 'saisonchart', 'lead', 'profilwahl', 'pval', 'profilchart', 'profilspiele',
     'profiltabelle', 'spielertabelle', 'wkpi', 'subhist', 'statetabelle', 'mitohnetabelle', 'kaderlegend', 'kaderchart', 'durchchart', 'beidetabelle', 'bkpi',
     'platzchart', 'tabellentabelle', 'heimtabelle', 'spielliste', 'gegnertabelle', 'bestseason', 'msrecent', 'msnext', 'rbsum', 'rueckblick', 'factsum', 'fact', 'tjchart', 'abdeckung', 'fehlliste', 'abweichung', 'bilanzkurz', 'mittabelle', 'vorltabelle', 'pgegtabelle'];
   T.redraw = (names = ALL) => names.forEach((n) => dash.draw(n));
@@ -1142,4 +1142,100 @@
     dash.draw('spieltabelle');
   });
   document.addEventListener('change', (e) => { if (e.target.id === 'games-filter') T.redraw(['gamessum', 'spieltabelle']); });
+
+  // ---------- Duo-Vergleich ----------
+  T.st.duo = {};
+  const duoDefaults = () => {
+    const ps = T.players().slice().sort((a, b) => b.matches - a.matches).map((p) => p.name);
+    return {a1: ps[0], a2: ps[1], b1: ps[2], b2: ps[3]};
+  };
+  const duoPick = (slot) => {
+    const names = new Set(T.players().map((p) => p.name));
+    const v = T.st.duo[slot];
+    return v && names.has(v) ? v : duoDefaults()[slot];
+  };
+  T.draw('duowahl', (sel) => {
+    if (!T.ok('spielerspiele', 'spiele')) { sel.replaceChildren(); return; }
+    const names = T.players().map((p) => p.name).sort((a, b) => a.localeCompare(b, 'de'));
+    sel.replaceChildren(...names.map((n) => new Option(n, n)));
+    const v = duoPick(sel.dataset.slot);
+    if (v) sel.value = v;
+  });
+  document.addEventListener('change', (e) => {
+    const s = e.target.closest('.tsg-duo-sel');
+    if (!s) return;
+    T.st.duo[s.dataset.slot] = s.value;
+    T.redraw(['duoname', 'duotabelle']);
+  });
+  T.draw('duoname', (el) => {
+    const d = el.dataset.duo;
+    const n1 = T.ok('spielerspiele', 'spiele') ? duoPick(d + '1') : null, n2 = n1 ? duoPick(d + '2') : null;
+    el.textContent = n1 && n2 ? n1 + ' + ' + n2 : (d === 'a' ? 'Duo A' : 'Duo B');
+  });
+  T.goalsByMatch = () => T.memo('gbm', () => d3.group(T.ok('tore') ? dash.data('tore').data : [], (t) => t.matchId));
+  T.duo = (n1, n2) => {
+    const mm = T.matchMap(), gbm = T.goalsByMatch();
+    const rowsOf = (n) => new Map(T.pm().filter((r) => r.name === n).map((r) => [r.matchId, r]));
+    const A = rowsOf(n1), B = rowsOf(n2);
+    const shared = [...A.keys()].filter((id) => B.has(id));
+    const pts = (s) => (s.result === 'S' ? 3 : s.result === 'U' ? 1 : 0);
+    const res = (ids) => {
+      const g = ids.map((id) => mm.get(id)).filter(Boolean);
+      const c = (r) => g.filter((s) => s.result === r).length;
+      return {n: g.length, S: c('S'), U: c('U'), N: c('N'), ppg: g.length ? T.q(g.reduce((a, s) => a + pts(s), 0), g.length) : null,
+        win: g.length ? T.q(c('S'), g.length, 3) : null, gf: T.sum(g, 'goalsFor'), ga: T.sum(g, 'goalsAgainst')};
+    };
+    const both = res(shared);
+    let ovMin = 0, ovF = 0, ovA = 0, ovGames = 0;
+    for (const id of shared) {
+      const a = A.get(id), b = B.get(id), s = mm.get(id);
+      if (!s || s.verdict || s.goalMinutes !== 'complete' || a.inMin === null || b.inMin === null) continue;
+      const from = Math.max(a.inMin, b.inMin), to = Math.min(a.outMin, b.outMin);
+      ovGames += 1;
+      if (to <= from) continue;
+      ovMin += to - from;
+      for (const t of gbm.get(id) || []) if (t.minute > (from === 0 ? -1 : from) && t.minute <= to) { if (t.side === 'F') ovF += 1; else ovA += 1; }
+    }
+    const pairPts = shared.reduce((acc, id) => acc + A.get(id).goals + A.get(id).assists + B.get(id).goals + B.get(id).assists, 0);
+    const only1 = res([...A.keys()].filter((id) => !B.has(id))), only2 = res([...B.keys()].filter((id) => !A.has(id)));
+    return {n1, n2, both, gdpg: both.n ? T.q(both.gf - both.ga, both.n) : null, gfpg: both.n ? T.q(both.gf, both.n) : null, gapg: both.n ? T.q(both.ga, both.n) : null,
+      pairPts, pairPtsPg: both.n ? T.q(pairPts, both.n) : null, ovMin, ovGames, ovPm: ovGames ? ovF - ovA : null, ovF, ovA,
+      ovPm90: ovMin >= 90 ? T.q((ovF - ovA) * 90, ovMin) : null, only1, only2};
+  };
+  T.draw('duotabelle', (el) => {
+    el.replaceChildren();
+    if (!T.ok('spielerspiele', 'spiele')) return;
+    const A = T.duo(duoPick('a1'), duoPick('a2')), B = T.duo(duoPick('b1'), duoPick('b2'));
+    const rows = [
+      ['group', 'Beide im Spiel'],
+      ['Gemeinsame Spiele', (d) => d.both.n, 'int', 0],
+      ['Siege · Unentschieden · Niederlagen', (d) => `${d.both.S} · ${d.both.U} · ${d.both.N}`, 'text', 0],
+      ['Punkte pro Spiel', (d) => d.both.ppg, 'd2', 1],
+      ['Siegquote', (d) => d.both.win, 'pct', 1],
+      ['Tore : Gegentore pro Spiel', (d) => (d.both.n ? `${T.fmt('d2', d.gfpg)} : ${T.fmt('d2', d.gapg)}` : '–'), 'text', 0],
+      ['Tordifferenz pro Spiel', (d) => d.gdpg, 'd2s', 1],
+      ['Tore + Vorlagen des Duos', (d) => d.pairPts, 'int', 1],
+      ['… pro gemeinsames Spiel', (d) => d.pairPtsPg, 'd2', 1],
+      ['group', 'Gemeinsam auf dem Platz'],
+      ['Minuten zusammen', (d) => d.ovMin, 'int', 0],
+      ['Tore : Gegentore in dieser Zeit', (d) => (d.ovGames ? `${d.ovF} : ${d.ovA}` : '–'), 'text', 0],
+      ['Plus/Minus pro 90 Minuten', (d) => d.ovPm90, 'd2s', 1],
+      ['group', 'Nur einer dabei'],
+      ['Punkte pro Spiel – nur erster Spieler', (d) => d.only1.ppg, 'd2', 0, (d) => `${d.n1}, ${d.only1.n} Sp.`],
+      ['Punkte pro Spiel – nur zweiter Spieler', (d) => d.only2.ppg, 'd2', 0, (d) => `${d.n2}, ${d.only2.n} Sp.`],
+    ];
+    for (const r of rows) {
+      if (r[0] === 'group') { el.append(h('tr', {class: 'tsg-duo-group'}, h('td', {colSpan: 3, text: r[1]}))); continue; }
+      const [label, get, fmt, cmp, sub] = r;
+      const va = get(A), vb = get(B);
+      const cell = (v, other, d) => {
+        const td = h('td', null, fmt === 'text' ? String(v) : T.fmt(fmt, v));
+        if (sub) td.append(h('div', {class: 'tsg-note', text: sub(d)}));
+        if (cmp && typeof v === 'number' && typeof other === 'number' && v > other) td.className = 'tsg-duo-best tsg-good';
+        if ((fmt === 'd2s' || fmt === 'ints') && typeof v === 'number' && v !== 0 && !td.className) td.className = v > 0 ? 'tsg-good' : 'tsg-bad';
+        return td;
+      };
+      el.append(h('tr', null, h('td', {class: 'tsg-l', text: label}), cell(va, vb, A), cell(vb, va, B)));
+    }
+  });
 })();
