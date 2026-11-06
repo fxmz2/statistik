@@ -62,7 +62,7 @@
     $$('.tsg-bviewpick .tsg-preset').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     $$('[data-bview-panel]').forEach((p) => { p.hidden = p.dataset.bviewPanel !== b.dataset.bview; });
   });
-  on('.tsg-lead', 'click', (ol, e) => showPlayer(e.target.closest('li[data-name]')?.dataset.name));
+  on('.tsg-lead', 'click', (ol, e) => { if (e.target.closest('button, .tsg-detail')) return; showPlayer(e.target.closest('li[data-name]')?.dataset.name); });
   on('.tsg-clickrows', 'click', (tb, e) => showPlayer(e.target.closest('tr[data-name]')?.dataset.name));
   on('.tsg-spot', 'click', (b) => showPlayer(T.spotTop(b.dataset.spot)?.name));
 
@@ -121,7 +121,7 @@
   };
   document.addEventListener('click', (e) => {
     const b = e.target.closest('.tsg-more');
-    if (!b) return;
+    if (!b || b.classList.contains('tsg-detail-btn')) return;
     const list = b.closest('[data-draw]');
     if (!list) return;
     const def = Number(b.dataset.def) || 10;
@@ -331,7 +331,44 @@
     }, {label});
   });
 
-  // Bestenliste (überall dieselbe Logik)
+  // ---------- Details zu Wechseln und Plus/Minus ----------
+  const DETAIL = {inGain: 'in', inGainAvg: 'in', inGD: 'in', inImproved: 'in', outGain: 'out', outGD: 'out', plusMinus: 'pm', pmPer90: 'pm'};
+  T.openDetails = new Set();
+  const subLine = (n, what, better, worse, res) => `aus ${T.fmt('int', n)} ${what}: ${better}× besser, ${n - better - worse}× gleich, ${worse}× schlechter · am Ende ${res[0]} S, ${res[1]} U, ${res[2]} N`;
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.tsg-detail-btn');
+    if (!b) return;
+    const k = b.dataset.key;
+    if (T.openDetails.has(k)) T.openDetails.delete(k); else T.openDetails.add(k);
+    const list = b.closest('[data-draw]');
+    if (list) dash.draw(list.dataset.draw);
+  });
+  T.detailTable = (p, kind) => {
+    const mm = T.matchMap();
+    const rows = (kind === 'in' ? p.inRows : kind === 'out' ? p.outRows : p.pmRows).slice().sort((a, b) => b.date.localeCompare(a.date));
+    const sign = (v) => (v > 0 ? 'tsg-good' : v < 0 ? 'tsg-bad' : '');
+    const word = {Führung: 'vorne', Remis: 'Remis', Rückstand: 'hinten'};
+    const box = h('ol', {class: 'tsg-dlist'});
+    for (const r of rows) {
+      const s = mm.get(r.matchId);
+      const opp = s ? (s.venue === 'Heim' ? 'gegen ' : 'bei ') + s.opponent + (T.ids().length > 1 ? ' · ' + T.label[r.teamId] : '') : '';
+      const end = s ? h('span', {class: s.result === 'S' ? 'tsg-good' : s.result === 'N' ? 'tsg-bad' : '', text: s.goalsFor + ':' + s.goalsAgainst}) : '–';
+      let meta, val;
+      if (kind === 'pm') {
+        const pm = r.gfOn - r.gaOn;
+        meta = [`auf dem Platz ${r.inMin}.–${r.outMin}. Min. · Tore dabei ${r.gfOn}:${r.gaOn} · Endstand `, end];
+        val = h('span', {class: 'tsg-pval ' + sign(pm), text: T.fmt('ints', pm)});
+      } else {
+        const g = kind === 'in' ? r.inGain : r.outGain, st = kind === 'in' ? r.inState : r.outState, sc = kind === 'in' ? r.inScore : r.outScore;
+        meta = [`${kind === 'in' ? 'rein' : 'raus'} ${kind === 'in' ? r.inMin : r.outMin}. Min. bei ${sc} (${word[st] || st}) → Endstand `, end];
+        val = h('span', {class: 'tsg-pval ' + sign(g), text: T.fmt('ints', g) + ' Pkt.'});
+      }
+      box.append(h('li', null, h('span', {class: 'tsg-rank', text: ddmmyy(r.date)}), h('span', {class: 'tsg-pname', text: opp}), val, h('span', {class: 'tsg-psplit'}, ...meta)));
+    }
+    return box;
+  };
+
+  // ---------- Bestenliste (überall dieselbe Logik)
   dash.draw('lead', (el) => {
     if (!T.ready(el, ['spielerspiele', 'spiele'])) return;
     el.replaceChildren();
@@ -360,14 +397,17 @@
       if (f === 'maxStreak') sub = p.streakSpan;
       else if (f === 'seasons') sub = p.span;
       else if (stack && parts.length > 1) sub = parts.map(([id, v]) => T.label[id] + ' ' + T.fmt('int', v)).join(' · ');
-      else if (f.startsWith('in')) sub = `aus ${T.fmt('int', p.inN)} Einwechslungen mit Torminuten`;
-      else if (f.startsWith('out')) sub = `aus ${T.fmt('int', p.outN)} Auswechslungen mit Torminuten`;
+      else if (f.startsWith('in')) sub = subLine(p.inN, 'Einwechslungen', p.inImproved, p.inWorse, p.inRes);
+      else if (f.startsWith('out')) sub = subLine(p.outN, 'Auswechslungen', p.outImproved, p.outWorse, p.outRes);
       else if (f === 'plusMinus' || f === 'pmPer90') sub = `${T.fmt('int', p.gfOn)}:${T.fmt('int', p.gaOn)} Tore auf dem Platz · ${T.fmt('int', p.pmGames)} Spiele`;
       else if (f === 'ppgDiff') sub = `mit ${T.fmt('d2', p.ppgWith)} · ohne ${T.fmt('d2', p.ppgWithout)} (${T.fmt('int', p.gamesWithout)} Spiele)`;
       else if (rate || kind === 'pct') sub = `${T.fmt('int', p.matches)} Einsätze · ${T.fmt('int', p.minutes)} Min.`;
       const val = h('span', {class: 'tsg-pval' + (signed && p[f] !== 0 ? (p[f] > 0 ? ' tsg-good' : ' tsg-bad') : ''), text: T.fmt(kind, p[f])});
+      const dk = DETAIL[f], key = (sel.id || '') + '|' + p.name, open = dk && T.openDetails.has(key);
       el.append(h('li', {'data-name': p.name, title: 'Profil öffnen'}, h('span', {class: 'tsg-rank', text: rank + '.'}), h('span', {class: 'tsg-pname', text: p.name}), val, track,
-        sub ? h('span', {class: 'tsg-psplit', text: sub}) : null));
+        sub ? h('span', {class: 'tsg-psplit', text: sub}) : null,
+        dk ? h('span', {class: 'tsg-detail-bar'}, h('button', {type: 'button', class: 'tsg-more tsg-detail-btn', 'data-key': key, 'aria-expanded': String(open), text: open ? 'Spiele ausblenden' : 'Spiele anzeigen'})) : null));
+      if (open) el.append(h('li', {class: 'tsg-detail'}, T.detailTable(p, dk)));
     });
     T.more(el, all_rows.length, 10);
   });

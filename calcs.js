@@ -34,7 +34,7 @@ dash.calc('spielerspiele', {
         start: start ? 1 : 0, subIn: sub ? 1 : 0, subOut: off ? 1 : 0, full: start && !off && !sent ? 1 : 0, minutes,
         goals: n('goals'), assists: n('assists'), yellow: n('yellow'), yellowRed: n('yellowRed'), red: n('red'), penHit: n('penHit'), penMiss: n('penMiss'),
         points: pts(s.goalsFor, s.goalsAgainst), inMin, outMin, minutesOk: ok,
-        gfOn: null, gaOn: null, inState: null, inGain: null, inGD: null, outState: null, outGain: null, outGD: null,
+        gfOn: null, gaOn: null, inState: null, inScore: null, inGain: null, inGD: null, outState: null, outScore: null, outGain: null, outGD: null,
       };
       if (ok) {
         const [f, ag] = score(g, inMin === 0 ? -1 : inMin, outMin);
@@ -42,11 +42,11 @@ dash.calc('spielerspiele', {
         const final = pts(s.goalsFor, s.goalsAgainst), fd = s.goalsFor - s.goalsAgainst;
         if (sub) {
           const [f0, a0] = score(g, -1, inMin);
-          row.inState = state(f0, a0); row.inGain = final - pts(f0, a0); row.inGD = fd - (f0 - a0);
+          row.inState = state(f0, a0); row.inScore = f0 + ':' + a0; row.inGain = final - pts(f0, a0); row.inGD = fd - (f0 - a0);
         }
         if (start && off && !sent) {
           const [f0, a0] = score(g, -1, outMin);
-          row.outState = state(f0, a0); row.outGain = final - pts(f0, a0); row.outGD = fd - (f0 - a0);
+          row.outState = state(f0, a0); row.outScore = f0 + ':' + a0; row.outGain = final - pts(f0, a0); row.outGD = fd - (f0 - a0);
         }
       }
       out.push(row);

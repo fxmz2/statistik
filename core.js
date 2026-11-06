@@ -106,16 +106,18 @@
       let p = by.get(r.name);
       if (!p) {
         p = {name: r.name, ...zero(), team: {}, years: new Set(), games: new Set(), pmGames: 0, gfOn: 0, gaOn: 0, pmMinutes: 0,
-          inN: 0, inGain: 0, inGD: 0, inImproved: 0, inWorse: 0, outN: 0, outGain: 0, outGD: 0};
+          inN: 0, inGain: 0, inGD: 0, inImproved: 0, inWorse: 0, outN: 0, outGain: 0, outGD: 0, outImproved: 0, outWorse: 0,
+          inRes: [0, 0, 0], outRes: [0, 0, 0], inRows: [], outRows: [], pmRows: []};
         by.set(r.name, p);
       }
       add(p, r);
       if (!p.team[r.teamId]) p.team[r.teamId] = zero();
       add(p.team[r.teamId], r);
       p.years.add(r.seasonYear); p.games.add(r.matchId);
-      if (r.gfOn !== null) { p.pmGames += 1; p.gfOn += r.gfOn; p.gaOn += r.gaOn; p.pmMinutes += Math.max(0, r.outMin - r.inMin); }
-      if (r.inGain !== null) { p.inN += 1; p.inGain += r.inGain; p.inGD += r.inGD; p.inImproved += r.inGain > 0 ? 1 : 0; p.inWorse += r.inGain < 0 ? 1 : 0; }
-      if (r.outGain !== null) { p.outN += 1; p.outGain += r.outGain; p.outGD += r.outGD; }
+      const ri = r.points === 3 ? 0 : r.points === 1 ? 1 : 2;
+      if (r.gfOn !== null) { p.pmRows.push(r); p.pmGames += 1; p.gfOn += r.gfOn; p.gaOn += r.gaOn; p.pmMinutes += Math.max(0, r.outMin - r.inMin); }
+      if (r.inGain !== null) { p.inRows.push(r); p.inRes[ri] += 1; p.inN += 1; p.inGain += r.inGain; p.inGD += r.inGD; p.inImproved += r.inGain > 0 ? 1 : 0; p.inWorse += r.inGain < 0 ? 1 : 0; }
+      if (r.outGain !== null) { p.outRows.push(r); p.outRes[ri] += 1; p.outN += 1; p.outGain += r.outGain; p.outGD += r.outGD; p.outImproved += r.outGain > 0 ? 1 : 0; p.outWorse += r.outGain < 0 ? 1 : 0; }
     }
     const list = [...by.values()];
     const tot = {goals: T.sum(list, 'goals'), points: T.sum(list, 'goals') + T.sum(list, 'assists'), minutes: T.sum(list, 'minutes')};
