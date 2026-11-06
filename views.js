@@ -8,6 +8,12 @@
   T.redraw = (names = ALL) => names.forEach((n) => dash.draw(n));
   const $$ = (sel) => document.querySelectorAll(sel);
   const on = (sel, ev, fn) => $$(sel).forEach((el) => el.addEventListener(ev, (e) => fn(el, e)));
+  // Ereignisse innerhalb der Seite abfangen (nicht am Dokument): so kommen sie auch im eingebetteten Dashboard an
+  T.root = document.querySelector('.tsg') || document;
+  T.setOptions = (sel, opts) => {
+    const sig = opts.map(([t, v]) => v + '=' + t).join('|');
+    if (sel.dataset.sig !== sig) { sel.replaceChildren(...opts.map(([t, v]) => new Option(t, v))); sel.dataset.sig = sig; }
+  };
 
   // ---------- Eigener Filter je Karte ----------
   // Jede Karte mit data-scope kann Mannschaft und Zeitraum für sich überschreiben.
@@ -35,7 +41,7 @@
   };
   T.draw = (name, fn) => dash.draw(name, (el, ...rest) => T.scoped(el, () => fn(el, ...rest)));
   const redrawCard = (card) => [...new Set([...card.querySelectorAll('[data-draw]')].map((x) => x.dataset.draw))].forEach((nm) => dash.draw(nm));
-  document.addEventListener('change', (e) => {
+  const cfChange = (e) => {
     const s = e.target.closest('.tsg-cf-team, .tsg-cf-range');
     if (!s) return;
     const card = s.closest('[data-scope]');
@@ -46,7 +52,9 @@
     s.classList.toggle('tsg-cf-on', !!s.value);
     card.classList.toggle('tsg-card-scoped', !!(sc.team || sc.range));
     redrawCard(card);
-  });
+  };
+  $$('.tsg-cf-team, .tsg-cf-range').forEach((x) => x.addEventListener('change', (e) => { e.stopPropagation(); cfChange(e); }));
+  T.root.addEventListener('change', cfChange);
 
   // ---------- Bedienung ----------
   const syncTeams = () => $$('.tsg-team').forEach((b) => {
@@ -158,7 +166,7 @@
     if (lim > def) row.append(h('button', {type: 'button', class: 'tsg-more', 'data-def': String(def), 'data-less': '1', text: 'Weniger anzeigen'}));
     el.append(row);
   };
-  document.addEventListener('click', (e) => {
+  T.root.addEventListener('click', (e) => {
     const b = e.target.closest('.tsg-more');
     if (!b || b.classList.contains('tsg-detail-btn')) return;
     const list = b.closest('[data-draw]');
@@ -276,7 +284,7 @@
   // ---------- Kopf ----------
   T.draw('seasonsel', (sel) => {
     const ys = T.allYears();
-    sel.replaceChildren(...ys.map((y) => new Option(T.seasonLabel(y), String(y))));
+    T.setOptions(sel, ys.map((y) => [T.seasonLabel(y), String(y)]));
     if (!ys.length) return;
     sel.value = String(sel.dataset.which === 'from' ? (T.st.from ?? ys[0]) : (T.st.to ?? ys[ys.length - 1]));
   });
@@ -374,7 +382,7 @@
   const DETAIL = {inGain: 'in', inGainAvg: 'in', inGD: 'in', inImproved: 'in', outGain: 'out', outGD: 'out', plusMinus: 'pm', pmPer90: 'pm'};
   T.openDetails = new Set();
   const subLine = (n, what, better, worse, res) => `aus ${T.fmt('int', n)} ${what}: ${better}× besser, ${n - better - worse}× gleich, ${worse}× schlechter · am Ende ${res[0]} S, ${res[1]} U, ${res[2]} N`;
-  document.addEventListener('click', (e) => {
+  T.root.addEventListener('click', (e) => {
     const b = e.target.closest('.tsg-detail-btn');
     if (!b) return;
     const k = b.dataset.key;
@@ -459,7 +467,7 @@
   };
   T.draw('profilwahl', (sel) => {
     const names = T.ok('spielerspiele', 'spiele') ? T.players().map((p) => p.name).sort((a, b) => a.localeCompare(b, 'de')) : [];
-    sel.replaceChildren(...names.map((n) => new Option(n, n)));
+    T.setOptions(sel, names.map((n) => [n, n]));
     const c = T.cur();
     if (c) sel.value = c.name;
   });
@@ -1049,9 +1057,8 @@
     const ys = T.allYears();
     const card = sel.closest('[data-scope]');
     const cur = (card && T.scopes.get(card.id)?.range) || '';
-    sel.replaceChildren(new Option('Zeitraum wie oben', ''), new Option('Alle Saisons', 'all'), new Option('Letzte 10 Saisons', 'last10'),
-      new Option('Letzte 5 Saisons', 'last5'), new Option('Letzte 3 Saisons', 'last3'), new Option('Aktuelle Saison', 'last1'),
-      ...ys.slice().reverse().map((y) => new Option('Nur ' + T.seasonLabel(y), 'y' + y)));
+    T.setOptions(sel, [['Zeitraum wie oben', ''], ['Alle Saisons', 'all'], ['Letzte 10 Saisons', 'last10'], ['Letzte 5 Saisons', 'last5'],
+      ['Letzte 3 Saisons', 'last3'], ['Aktuelle Saison', 'last1'], ...ys.slice().reverse().map((y) => ['Nur ' + T.seasonLabel(y), 'y' + y])]);
     sel.value = cur;
   });
 
@@ -1134,14 +1141,14 @@
       if (open) el.append(h('tr', null, h('td', {class: 'tsg-gamedetail', colSpan: cols.length}, T.matchDetail(g.r.matchId, p?.name))));
     }
   });
-  document.addEventListener('click', (e) => {
+  T.root.addEventListener('click', (e) => {
     const tr = e.target.closest('.tsg-gamesbody tr.tsg-gamerow');
     if (!tr) return;
     const id = Number(tr.dataset.match);
     if (T.openGames.has(id)) T.openGames.delete(id); else T.openGames.add(id);
     dash.draw('spieltabelle');
   });
-  document.addEventListener('change', (e) => { if (e.target.id === 'games-filter') T.redraw(['gamessum', 'spieltabelle']); });
+  $$('#games-filter').forEach((x) => x.addEventListener('change', () => T.redraw(['gamessum', 'spieltabelle'])));
 
   // ---------- Duo-Vergleich ----------
   T.st.duo = {};
@@ -1155,18 +1162,21 @@
     return v && names.has(v) ? v : duoDefaults()[slot];
   };
   T.draw('duowahl', (sel) => {
-    if (!T.ok('spielerspiele', 'spiele')) { sel.replaceChildren(); return; }
+    if (!T.ok('spielerspiele', 'spiele')) { T.setOptions(sel, []); return; }
     const names = T.players().map((p) => p.name).sort((a, b) => a.localeCompare(b, 'de'));
-    sel.replaceChildren(...names.map((n) => new Option(n, n)));
+    T.setOptions(sel, names.map((n) => [n, n]));
     const v = duoPick(sel.dataset.slot);
     if (v) sel.value = v;
   });
-  document.addEventListener('change', (e) => {
+  const duoChange = (e) => {
     const s = e.target.closest('.tsg-duo-sel');
-    if (!s) return;
+    if (!s || T.st.duo[s.dataset.slot] === s.value) return;
     T.st.duo[s.dataset.slot] = s.value;
     T.redraw(['duoname', 'duotabelle']);
-  });
+  };
+  T.root.addEventListener('change', duoChange);
+  T.root.addEventListener('input', duoChange);
+  $$('.tsg-duo-sel').forEach((x) => { x.addEventListener('change', duoChange); x.addEventListener('input', duoChange); });
   T.draw('duoname', (el) => {
     const d = el.dataset.duo;
     const n1 = T.ok('spielerspiele', 'spiele') ? duoPick(d + '1') : null, n2 = n1 ? duoPick(d + '2') : null;
