@@ -102,6 +102,19 @@
   .tsg .tsg-cf .tsg-select { font-size: var(--cds-font-size-caption); padding: 2px var(--cds-pad-sm); color: var(--color-fg-muted); background: transparent; max-width: 100%; }
   .tsg .tsg-cf .tsg-select.tsg-cf-on { color: var(--color-fg); font-weight: 600; border-color: var(--color-fg); background: var(--color-bg); }
   .tsg .tsg-card-scoped { border-color: var(--color-fg-muted); }
+  .tsg-gamesbody tr.tsg-gamerow { cursor: pointer; }
+  .tsg-gamesbody tr.tsg-gamerow[aria-expanded="true"] td { background: var(--color-bg); font-weight: 600; }
+  .tsg .tsg-gamesbody td.tsg-gamedetail { white-space: normal; text-align: left; background: var(--color-bg); padding: var(--cds-pad-sm) var(--cds-pad-md); position: static; }
+  .tsg-gd { display: flex; flex-direction: column; gap: var(--cds-gap-sm); font-size: var(--cds-font-size-caption); max-width: 70ch; }
+  .tsg-gd h4 { margin: 0; font-size: var(--cds-font-size-caption); font-weight: 600; color: var(--color-fg-muted); text-transform: uppercase; letter-spacing: .04em; }
+  .tsg-gd ol, .tsg-gd ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+  .tsg-gd .tsg-me { font-weight: 700; }
+  @media (max-width: 560px) {
+    #tbl-games th:nth-child(4), #tbl-games td:nth-child(4):not(.tsg-gamedetail), #tbl-games th:nth-child(9), #tbl-games tr.tsg-gamerow td:nth-child(9) { display: none; }
+    #tbl-games tr.tsg-gamerow td:nth-child(2) { white-space: normal; }
+    #tbl-games td, #tbl-games .tsg-th button { padding-inline: 5px; }
+  }
+  .tsg-gd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--cds-gap-sm) var(--cds-gap-lg); }
   .tsg-detail-bar { grid-column: 2 / 4; }
   .tsg .tsg-lead li.tsg-detail { display: block; }
   .tsg-dlist { list-style: none; margin: 0 0 var(--cds-gap-sm); padding: var(--cds-pad-xs) var(--cds-pad-sm); max-height: 22rem; overflow: auto; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-bg); display: flex; flex-direction: column; }
@@ -446,6 +459,43 @@
             <tbody data-draw="pgegtabelle"></tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <div class="tsg-card" id="alle-spiele" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-alle-spiele" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-alle-spiele" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
+      <div class="tsg-card-head">
+        <h2>Alle Spiele von <span data-draw="pval" data-field="name" data-fmt="text">—</span></h2>
+        <select class="tsg-select tsg-games-filter" id="games-filter" aria-label="Spiele filtern">
+          <option value="all" selected>Alle Spiele</option>
+          <option value="scored">Mit Tor oder Vorlage</option>
+          <option value="start">Startelf</option>
+          <option value="full">Durchgespielt</option>
+          <option value="sub">Eingewechselt</option>
+          <option value="off">Ausgewechselt</option>
+          <option value="card">Mit Karte</option>
+          <option value="S">Gewonnen</option>
+          <option value="U">Unentschieden</option>
+          <option value="N">Verloren</option>
+        </select>
+      </div>
+      <p class="tsg-note tsg-games-sum" data-draw="gamessum" data-source="spielerspiele spiele">—</p>
+      <p class="tsg-note">Klick auf ein Spiel zeigt Torverlauf und Aufstellung. Spaltenkopf anklicken zum Sortieren.</p>
+      <div class="tsg-tablewrap">
+        <table class="tsg-table" id="tbl-games" data-source="spielerspiele spiele tore">
+          <thead><tr>
+            <th class="tsg-th" data-field="date" data-fmt="text" aria-sort="descending"><button type="button">Datum</button></th>
+            <th class="tsg-th tsg-l" data-field="opponent" data-fmt="text"><button type="button">Gegner</button></th>
+            <th class="tsg-th" data-field="score" data-fmt="text"><button type="button">Ergebnis</button></th>
+            <th class="tsg-th tsg-l" data-field="role" data-fmt="text"><button type="button">Rolle</button></th>
+            <th class="tsg-th" data-field="minutes" data-fmt="int"><button type="button">Min.</button></th>
+            <th class="tsg-th" data-field="goals" data-fmt="int"><button type="button">Tore</button></th>
+            <th class="tsg-th" data-field="assists" data-fmt="int"><button type="button">Vorl.</button></th>
+            <th class="tsg-th" data-field="pm" data-fmt="ints"><button type="button">+/−</button></th>
+            <th class="tsg-th" data-field="cards" data-fmt="int"><button type="button">Karten</button></th>
+          </tr></thead>
+          <tbody class="tsg-gamesbody" data-draw="spieltabelle"></tbody>
+        </table>
       </div>
     </div>
 

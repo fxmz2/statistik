@@ -2,7 +2,7 @@
 (() => {
   const T = window.tsg;
   const h = T.h;
-  const ALL = ['cfrange', 'seasonsel', 'summary', 'kpi', 'kpisplit', 'spot', 'mdesc', 'legend', 'saisonchart', 'lead', 'profilwahl', 'pval', 'profilchart', 'profilspiele',
+  const ALL = ['cfrange', 'gamessum', 'spieltabelle', 'seasonsel', 'summary', 'kpi', 'kpisplit', 'spot', 'mdesc', 'legend', 'saisonchart', 'lead', 'profilwahl', 'pval', 'profilchart', 'profilspiele',
     'profiltabelle', 'spielertabelle', 'wkpi', 'subhist', 'statetabelle', 'mitohnetabelle', 'kaderlegend', 'kaderchart', 'durchchart', 'beidetabelle', 'bkpi',
     'platzchart', 'tabellentabelle', 'heimtabelle', 'spielliste', 'gegnertabelle', 'bestseason', 'msrecent', 'msnext', 'rbsum', 'rueckblick', 'factsum', 'fact', 'tjchart', 'abdeckung', 'fehlliste', 'abweichung', 'bilanzkurz', 'mittabelle', 'vorltabelle', 'pgegtabelle'];
   T.redraw = (names = ALL) => names.forEach((n) => dash.draw(n));
@@ -91,12 +91,12 @@
   const showPlayer = (name) => {
     if (!name) return;
     T.st.player = name;
-    T.redraw(['profilwahl', 'pval', 'profilchart', 'profilspiele', 'profiltabelle', 'bilanzkurz', 'mittabelle', 'vorltabelle', 'pgegtabelle']);
+    T.redraw(['profilwahl', 'pval', 'profilchart', 'profilspiele', 'profiltabelle', 'bilanzkurz', 'mittabelle', 'vorltabelle', 'pgegtabelle', 'gamessum', 'spieltabelle']);
     openTab('spieler', true);
     document.getElementById('spielerprofil')?.scrollIntoView({behavior: 'smooth', block: 'start'});
   };
   T.showPlayer = showPlayer;
-  on('#profil-spieler', 'change', (s) => { T.st.player = s.value; T.redraw(['pval', 'profilchart', 'profilspiele', 'profiltabelle', 'bilanzkurz', 'mittabelle', 'vorltabelle', 'pgegtabelle']); });
+  on('#profil-spieler', 'change', (s) => { T.st.player = s.value; T.redraw(['pval', 'profilchart', 'profilspiele', 'profiltabelle', 'bilanzkurz', 'mittabelle', 'vorltabelle', 'pgegtabelle', 'gamessum', 'spieltabelle']); });
   on('.tsg-bviewpick .tsg-preset', 'click', (b) => {
     $$('.tsg-bviewpick .tsg-preset').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     $$('[data-bview-panel]').forEach((p) => { p.hidden = p.dataset.bviewPanel !== b.dataset.bview; });
@@ -1052,4 +1052,92 @@
       ...ys.slice().reverse().map((y) => new Option('Nur ' + T.seasonLabel(y), 'y' + y)));
     sel.value = cur;
   });
+
+  // ---------- Alle Spiele eines Spielers ----------
+  T.openGames = new Set();
+  const GAMEFILTER = {all: () => true, scored: (r) => r.goals + r.assists > 0, start: (r) => r.start, full: (r) => r.full, sub: (r) => r.subIn,
+    off: (r) => r.subOut, card: (r) => r.yellow + r.yellowRed + r.red > 0, S: (r, s) => s?.result === 'S', U: (r, s) => s?.result === 'U', N: (r, s) => s?.result === 'N'};
+  T.playerGames = () => {
+    const p = T.cur();
+    if (!p) return [];
+    const mm = T.matchMap();
+    const f = GAMEFILTER[document.getElementById('games-filter')?.value || 'all'] || GAMEFILTER.all;
+    return T.pm().filter((r) => r.name === p.name).map((r) => {
+      const s = mm.get(r.matchId);
+      const role = r.start ? (r.subOut ? `Startelf, raus ${r.minutes}.` : r.full ? 'Startelf, 90 Min.' : 'Startelf') : (r.subIn ? `eingewechselt${r.inMin !== null ? ' ' + r.inMin + '.' : ''}` : '');
+      return {r, s, date: r.date, season: r.season, opponent: s ? (s.venue === 'Heim' ? '' : 'bei ') + s.opponent : '', score: s ? s.goalsFor + ':' + s.goalsAgainst : '–',
+        result: s?.result, role, minutes: r.minutes, goals: r.goals, assists: r.assists, pm: r.gfOn !== null ? r.gfOn - r.gaOn : null, cards: r.yellow + r.yellowRed + r.red};
+    }).filter((g) => f(g.r, g.s));
+  };
+  T.draw('gamessum', (el) => {
+    el.replaceChildren();
+    if (!T.ok('spielerspiele', 'spiele')) { el.textContent = '—'; return; }
+    const g = T.playerGames();
+    if (!g.length) { el.textContent = 'Keine Spiele in dieser Auswahl.'; return; }
+    const c = (x) => g.filter((y) => y.result === x).length;
+    el.append(h('b', {text: String(g.length)}), ` Spiele · ${c('S')} S, ${c('U')} U, ${c('N')} N · ${T.fmt('int', T.sum(g, 'minutes'))} Min. · ${T.sum(g, 'goals')} Tore · ${T.sum(g, 'assists')} Vorlagen`);
+  });
+  T.matchDetail = (matchId, me) => {
+    const s = T.matchMap().get(matchId);
+    const all = dash.data('spielerspiele').data.filter((r) => r.matchId === matchId);
+    const goals = T.ok('tore') ? dash.data('tore').data.filter((t) => t.matchId === matchId).sort((a, b) => a.minute - b.minute) : [];
+    const withMin = s && s.goalMinutes === 'complete';
+    let f = 0, a = 0;
+    const tl = h('ol');
+    for (const t of goals) {
+      if (t.side === 'F') f += 1; else a += 1;
+      const who = t.side === 'F' ? (t.scorer || (t.kind === 'goal_own_goal' ? 'Eigentor Gegner' : 'TSGV')) : (s ? s.opponent : 'Gegner');
+      const kind = t.kind === 'penalty_foul' || t.kind === 'penalty_hand' ? ' (Elfmeter)' : t.kind === 'goal_own_goal' ? ' (Eigentor)' : '';
+      tl.append(h('li', {class: t.scorer === me ? 'tsg-me' : null}, (withMin ? Math.floor(t.minute) + '. ' : '') + f + ':' + a + ' ' + who + kind));
+    }
+    if (!goals.length) tl.append(h('li', {class: 'tsg-note', text: s && s.goalsFor + s.goalsAgainst === 0 ? 'Keine Tore.' : 'Keine Torereignisse bei FuPa.'}));
+    const line = (r) => {
+      const bits = [];
+      if (r.goals) bits.push(r.goals > 1 ? r.goals + ' Tore' : 'Tor');
+      if (r.assists) bits.push(r.assists > 1 ? r.assists + ' Vorl.' : 'Vorl.');
+      if (r.yellow) bits.push('Gelb');
+      if (r.yellowRed) bits.push('Gelb-Rot');
+      if (r.red) bits.push('Rot');
+      const when = r.start ? (r.subOut ? ` (raus ${r.minutes}.)` : '') : (r.inMin !== null ? ` (rein ${r.inMin}.)` : ' (eingewechselt)');
+      return h('li', {class: r.name === me ? 'tsg-me' : null}, r.name + when + (bits.length ? ' · ' + bits.join(', ') : ''));
+    };
+    const starters = all.filter((r) => r.start), subs = all.filter((r) => !r.start).sort((x, y) => (x.inMin ?? 99) - (y.inMin ?? 99));
+    return h('div', {class: 'tsg-gd'},
+      h('div', {class: 'tsg-gd-grid'},
+        h('div', null, h('h4', {text: 'Torverlauf'}), tl),
+        h('div', null, h('h4', {text: `Startelf (${starters.length})`}), h('ul', null, starters.map(line))),
+        h('div', null, h('h4', {text: `Eingewechselt (${subs.length})`}), h('ul', null, subs.length ? subs.map(line) : [h('li', {class: 'tsg-note', text: 'niemand eingetragen'})]))),
+      s ? h('a', {href: 'https://www.fupa.net/match/' + s.slug, target: '_blank', rel: 'noopener', text: 'Spiel auf FuPa öffnen'}) : null);
+  };
+  T.draw('spieltabelle', (el) => {
+    el.replaceChildren();
+    if (!T.ok('spielerspiele', 'spiele')) return;
+    const p = T.cur();
+    const table = el.closest('table');
+    const cols = [...table.querySelectorAll('thead th')].map((th) => ({f: th.dataset.field, fmt: th.dataset.fmt, left: th.classList.contains('tsg-l')}));
+    for (const g of T.sortRows(table, T.playerGames())) {
+      const open = T.openGames.has(g.r.matchId);
+      const tr = h('tr', {class: 'tsg-gamerow', 'data-match': String(g.r.matchId), 'aria-expanded': String(open)});
+      for (const c of cols) {
+        const v = g[c.f];
+        let txt = c.f === 'date' ? ddmmyy(v) : T.fmt(c.fmt, v);
+        if (c.f === 'goals' || c.f === 'assists' || c.f === 'cards') txt = v ? String(v) : '';
+        const td = h('td', {class: c.left ? 'tsg-l' : null, text: txt});
+        if (c.f === 'score') td.className = g.result === 'S' ? 'tsg-good' : g.result === 'N' ? 'tsg-bad' : '';
+        if (c.f === 'pm' && typeof v === 'number' && v !== 0) td.className = v > 0 ? 'tsg-good' : 'tsg-bad';
+        if (c.f === 'opponent' && T.ids().length > 1) td.title = T.label[g.r.teamId];
+        tr.append(td);
+      }
+      el.append(tr);
+      if (open) el.append(h('tr', null, h('td', {class: 'tsg-gamedetail', colSpan: cols.length}, T.matchDetail(g.r.matchId, p?.name))));
+    }
+  });
+  document.addEventListener('click', (e) => {
+    const tr = e.target.closest('.tsg-gamesbody tr.tsg-gamerow');
+    if (!tr) return;
+    const id = Number(tr.dataset.match);
+    if (T.openGames.has(id)) T.openGames.delete(id); else T.openGames.add(id);
+    dash.draw('spieltabelle');
+  });
+  document.addEventListener('change', (e) => { if (e.target.id === 'games-filter') T.redraw(['gamessum', 'spieltabelle']); });
 })();

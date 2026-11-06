@@ -92,7 +92,17 @@ def main():
 
     with ThreadPoolExecutor(6) as ex:
         teams = [t for t in ex.map(team, seasons) if t]
-    print('Team-Saisons:', len(teams))
+    # Je Mannschaft (1. bzw. II/Reserve) und Saison nur eine Team-Seite: bei Reserve (mr1) und II (mr2)
+    # in derselben Saison gewinnt die neuere Linie, sonst würden dieselben Spiele doppelt gezählt.
+    order = list(LINES)
+    best = {}
+    for x in teams:
+        key = (LINES[x[0]][0], x[1])
+        if key not in best or order.index(x[0]) > order.index(best[key][0]):
+            best[key] = x
+    dropped = [f'{x[0]}-{x[1]}' for x in teams if best[(LINES[x[0]][0], x[1])] is not x]
+    teams = sorted(best.values(), key=lambda x: (order.index(x[0]), x[1]))
+    print('Team-Saisons:', len(teams), '(übersprungen, doppelt:', ', '.join(dropped) or 'keine', ')')
 
     def team_data(x):
         lin, y, slug, t = x
@@ -105,7 +115,13 @@ def main():
     with ThreadPoolExecutor(6) as ex:
         tdata = list(ex.map(team_data, teams))
 
-    matches = [(x, m) for x, st, ms, ps in tdata for m in ms if m.get('homeGoal') is not None]
+    matches, seen = [], set()
+    for x, st, ms, ps in tdata:
+        for m in ms:
+            if m.get('homeGoal') is None or m['id'] in seen:
+                continue
+            seen.add(m['id'])
+            matches.append((x, m))
     print('Spiele:', len(matches))
 
     def match_detail(xm):
