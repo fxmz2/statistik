@@ -95,6 +95,9 @@
   .tsg-lead-wide li { grid-template-columns: 3.6rem minmax(0, 1fr) auto; }
   .tsg-lead-wide .tsg-rank { text-align: left; }
   .tsg-lead-short { min-height: 9rem; }
+  .tsg .tsg-lead li.tsg-more-row, .tsg .tsg-matchlist li.tsg-more-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm); border-bottom: 0; padding-top: var(--cds-pad-xs); }
+  .tsg-more { font: inherit; font-size: var(--cds-font-size-caption); padding: 2px var(--cds-pad-md); border-radius: 999px; border: 1px solid var(--color-border-line); background: var(--color-bg); color: var(--color-fg); cursor: pointer; }
+  .tsg-more:hover { border-color: var(--color-fg-muted); }
   .tsg-fsum { color: var(--color-fg); }
   .tsg-rb { display: flex; flex-direction: column; gap: var(--cds-gap-md); min-height: 6rem; }
   .tsg-rb-match { display: flex; flex-direction: column; gap: 4px; padding-bottom: var(--cds-gap-sm); border-bottom: 1px solid var(--color-border-line); }

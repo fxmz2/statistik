@@ -107,6 +107,28 @@
 
   dash.onData(() => { $$('[data-sw]').forEach((s) => { s.style.background = T.color(s.dataset.sw); }); });
 
+  // ---------- „Weitere anzeigen“ unter Listen ----------
+  T.limits = new WeakMap();
+  T.cut = (el, rows, def) => rows.slice(0, T.limits.get(el) || def);
+  T.more = (el, total, def) => {
+    const lim = T.limits.get(el) || def;
+    if (total <= def) return;
+    const row = h('li', {class: 'tsg-more-row'});
+    if (lim < total) row.append(h('button', {type: 'button', class: 'tsg-more', 'data-def': String(def), text: `Weitere ${Math.min(10, total - lim)} anzeigen`}),
+      h('span', {class: 'tsg-note', text: `${Math.min(lim, total)} von ${total}`}));
+    if (lim > def) row.append(h('button', {type: 'button', class: 'tsg-more', 'data-def': String(def), 'data-less': '1', text: 'Weniger anzeigen'}));
+    el.append(row);
+  };
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.tsg-more');
+    if (!b) return;
+    const list = b.closest('[data-draw]');
+    if (!list) return;
+    const def = Number(b.dataset.def) || 10;
+    T.limits.set(list, b.dataset.less ? def : (T.limits.get(list) || def) + 10);
+    dash.draw(list.dataset.draw);
+  });
+
   // ---------- Helfer ----------
   T.sortRows = (table, rows) => {
     let s = T.st.sorts[table.id];
@@ -320,8 +342,9 @@
     const need = o.dataset.need, needMin = Number(o.dataset.needmin) || 0;
     const worst = card.querySelector('.tsg-lead-dir')?.value === 'worst';
     const signed = isSigned(kind);
-    const rows = T.players().filter((p) => p[f] !== null && p[f] !== undefined && (!rate || p.matches >= T.st.minGames) && (!need || p[need] >= needMin) && (signed || rate || need || p[f] > 0))
-      .sort((a, b) => ((low !== worst) ? a[f] - b[f] : b[f] - a[f]) || b.matches - a.matches || a.name.localeCompare(b.name, 'de')).slice(0, 10);
+    const all_rows = T.players().filter((p) => p[f] !== null && p[f] !== undefined && (!rate || p.matches >= T.st.minGames) && (!need || p[need] >= needMin) && (signed || rate || need || p[f] > 0))
+      .sort((a, b) => ((low !== worst) ? a[f] - b[f] : b[f] - a[f]) || b.matches - a.matches || a.name.localeCompare(b.name, 'de'));
+    const rows = T.cut(el, all_rows, 10);
     if (!rows.length) { empty(el, 'Kein Spieler erfüllt die Bedingungen – Zeitraum größer wählen oder Mindest-Einsätze senken.'); return; }
     const max = d3.max(rows, (p) => Math.abs(p[f])) || 1;
     const ids = T.ids();
@@ -346,6 +369,7 @@
       el.append(h('li', {'data-name': p.name, title: 'Profil öffnen'}, h('span', {class: 'tsg-rank', text: rank + '.'}), h('span', {class: 'tsg-pname', text: p.name}), val, track,
         sub ? h('span', {class: 'tsg-psplit', text: sub}) : null));
     });
+    T.more(el, all_rows.length, 10);
   });
 
   // ---------- Spieler ----------
@@ -394,7 +418,8 @@
     const p = T.cur();
     if (!p) return;
     const mm = T.matchMap();
-    const games = T.pm().filter((r) => r.name === p.name).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
+    const all_games = T.pm().filter((r) => r.name === p.name).sort((a, b) => b.date.localeCompare(a.date));
+    const games = T.cut(el, all_games, 10);
     if (!games.length) { empty(el, 'Keine Spiele in dieser Auswahl.'); return; }
     for (const r of games) {
       const s = mm.get(r.matchId);
@@ -410,6 +435,7 @@
         h('span', {class: 'tsg-rank', text: r.date.slice(8, 10) + '.' + r.date.slice(5, 7) + '.' + r.date.slice(2, 4)}),
         h('span', {class: 'tsg-meta', text: T.label[r.teamId] + ' · ' + bits.join(' · ')})));
     }
+    T.more(el, all_games.length, 10);
   });
   dash.draw('profiltabelle', (el) => {
     el.replaceChildren();
@@ -544,13 +570,15 @@
     if (!T.ready(el, ['spiele'])) return;
     el.replaceChildren();
     const kind = el.dataset.kind;
-    const rows = T.tm().filter((s) => s.result === kind)
-      .sort((a, b) => Math.abs(b.goalsFor - b.goalsAgainst) - Math.abs(a.goalsFor - a.goalsAgainst) || (kind === 'S' ? b.goalsFor - a.goalsFor : b.goalsAgainst - a.goalsAgainst) || b.date.localeCompare(a.date)).slice(0, 8);
+    const all_rows = T.tm().filter((s) => s.result === kind)
+      .sort((a, b) => Math.abs(b.goalsFor - b.goalsAgainst) - Math.abs(a.goalsFor - a.goalsAgainst) || (kind === 'S' ? b.goalsFor - a.goalsFor : b.goalsAgainst - a.goalsAgainst) || b.date.localeCompare(a.date));
+    const rows = T.cut(el, all_rows, 8);
     if (!rows.length) { empty(el, 'Keine Spiele in dieser Auswahl.'); return; }
     for (const s of rows) el.append(h('li', null, h('span', {class: 'tsg-score ' + (kind === 'S' ? 'tsg-good' : 'tsg-bad'), text: s.goalsFor + ':' + s.goalsAgainst}),
       h('span', {class: 'tsg-pname', text: (s.venue === 'Heim' ? 'gegen ' : 'bei ') + s.opponent}),
       h('span', {class: 'tsg-rank', text: s.date.slice(8, 10) + '.' + s.date.slice(5, 7) + '.' + s.date.slice(2, 4)}),
       h('span', {class: 'tsg-meta', text: T.label[s.teamId] + ' · Saison ' + s.season})));
+    T.more(el, all_rows.length, 8);
   });
   dash.draw('gegnertabelle', (el) => {
     el.replaceChildren();
@@ -567,8 +595,9 @@
     const sel = document.getElementById('best-metric'), o = optOf(sel);
     if (!o) return;
     const f = sel.value, low = o.dataset.low === '1', rate = o.dataset.rate === '1', kind = o.dataset.fmt || 'int', signed = isSigned(kind);
-    const rows = T.playerSeasons().filter((r) => r[f] !== null && r[f] !== undefined && (rate ? r.matches >= 10 : signed || r[f] > 0))
-      .sort((a, b) => (low ? a[f] - b[f] : b[f] - a[f]) || b.matches - a.matches).slice(0, 10);
+    const all_rows = T.playerSeasons().filter((r) => r[f] !== null && r[f] !== undefined && (rate ? r.matches >= 10 : signed || r[f] > 0))
+      .sort((a, b) => (low ? a[f] - b[f] : b[f] - a[f]) || b.matches - a.matches);
+    const rows = T.cut(el, all_rows, 10);
     if (!rows.length) { empty(el, 'Keine Daten in dieser Auswahl.'); return; }
     const max = d3.max(rows, (r) => Math.abs(r[f])) || 1;
     let rank = 0;
@@ -579,6 +608,7 @@
         h('span', {class: 'tsg-track'}, h('i', {style: {width: (100 * Math.abs(r[f]) / max) + '%', background: T.color(r.teamId)}})),
         h('span', {class: 'tsg-psplit', text: `Saison ${r.season} · ${r.team} · ${T.fmt('int', r.matches)} Einsätze`})));
     });
+    T.more(el, all_rows.length, 10);
   });
   // ---------- Meilensteine ----------
   const MS = {
@@ -626,7 +656,8 @@
     if (!T.ready(el, ['spielerspiele', 'spiele'])) return;
     el.replaceChildren();
     const c = msCat(), mm = T.matchMap();
-    const rows = T.milestones().reached.filter((x) => c === 'all' || x.cat === c).slice(0, 10);
+    const all_rows = T.milestones().reached.filter((x) => c === 'all' || x.cat === c);
+    const rows = T.cut(el, all_rows, 10);
     if (!rows.length) { empty(el, 'Noch keine Meilensteine in dieser Auswahl.'); return; }
     for (const x of rows) {
       const s = mm.get(x.matchId);
@@ -634,12 +665,14 @@
         h('span', {class: 'tsg-pval', text: msLabel(x.cat, x.mark)}),
         h('span', {class: 'tsg-psplit', text: (s ? (s.venue === 'Heim' ? 'gegen ' : 'bei ') + s.opponent + ' · ' : '') + T.label[x.teamId] + ' · Saison ' + (s ? s.season : '')})));
     }
+    T.more(el, all_rows.length, 10);
   });
   dash.draw('msnext', (el) => {
     if (!T.ready(el, ['spielerspiele', 'spiele'])) return;
     el.replaceChildren();
     const c = msCat();
-    const rows = T.milestones().next.filter((x) => c === 'all' || x.cat === c).slice(0, 10);
+    const all_rows = T.milestones().next.filter((x) => c === 'all' || x.cat === c);
+    const rows = T.cut(el, all_rows, 10);
     if (!rows.length) { empty(el, 'Kein aktiver Spieler in der Auswahl.'); return; }
     for (const x of rows) {
       const unit = x.to === 1 ? MS[x.cat].one : MS[x.cat].many;
@@ -648,6 +681,7 @@
         h('span', {class: 'tsg-track'}, h('i', {style: {width: (100 * x.now / x.mark) + '%', background: T.color(T.mixId())}})),
         h('span', {class: 'tsg-psplit', text: `noch ${T.fmt('int', x.to)} ${unit} · voraussichtlich ${x.games === 1 ? 'im nächsten Spiel' : 'in etwa ' + x.games + ' Spielen'}`})));
     }
+    T.more(el, all_rows.length, 10);
   });
   dash.draw('tjchart', (el) => {
     if (!T.ready(el, ['spielerspiele', 'spiele'])) return;
@@ -921,9 +955,11 @@
     if (!T.ready(el, ['spielerspiele', 'spiele'])) return;
     el.replaceChildren();
     const f = T.facts()[el.dataset.fact];
-    const rows = (f?.rows || []).slice(0, 5);
+    const all_rows = (f?.rows || []);
+    const rows = T.cut(el, all_rows, 5);
     if (!rows.length) { empty(el, 'Keine Einträge in dieser Auswahl.'); return; }
     rows.forEach((r, i) => el.append(h('li', {'data-name': r.name}, h('span', {class: 'tsg-rank', text: (i + 1) + '.'}), h('span', {class: 'tsg-pname', text: r.name}),
       h('span', {class: 'tsg-pval', text: r.val}), r.sub ? h('span', {class: 'tsg-psplit', text: r.sub}) : null)));
+    T.more(el, all_rows.length, 5);
   });
 })();
