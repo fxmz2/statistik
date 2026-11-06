@@ -7,6 +7,7 @@
 
   const dash = {
     colors: [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `var(--series-${i})`),
+    standalone: true,
     calc(id, o) { calcs[id] = o; },
     data(id) {
       if (!store[id] && calcs[id]) {

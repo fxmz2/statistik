@@ -1248,4 +1248,65 @@
       el.append(h('tr', null, h('td', {class: 'tsg-l', text: label}), cell(va, vb, A), cell(vb, va, B)));
     }
   });
+
+  // ---------- Memory: Einstellungen auf diesem Gerät merken (nur eigenständige Version) ----------
+  const MEMKEY = 'tsgv-statistik-einstellungen-v1';
+  const store = (() => {
+    if (!dash.standalone) return null;
+    try { const k = '__tsg_test'; window.localStorage.setItem(k, '1'); window.localStorage.removeItem(k); return window.localStorage; } catch (e) { return null; }
+  })();
+  const staticSelects = () => [...document.querySelectorAll('.tsg select.tsg-select[id]:not([data-draw])')];
+  T.saveSettings = () => {
+    if (!store) return;
+    const data = {sel: [...T.st.sel], from: T.st.from, to: T.st.to, minGames: T.st.minGames, group: T.st.group, player: T.st.player,
+      duo: T.st.duo, scopes: Object.fromEntries(T.scopes), selects: Object.fromEntries(staticSelects().map((x) => [x.id, x.value]))};
+    try { store.setItem(MEMKEY, JSON.stringify(data)); } catch (e) { /* Speicher voll oder gesperrt */ }
+  };
+  let saveTimer = 0;
+  const saveSoon = () => { clearTimeout(saveTimer); saveTimer = setTimeout(T.saveSettings, 150); };
+  const restore = () => {
+    if (!store) return;
+    let d = null;
+    try { d = JSON.parse(store.getItem(MEMKEY) || 'null'); } catch (e) { d = null; }
+    if (!d) return;
+    if (Array.isArray(d.sel) && d.sel.length && d.sel.every((x) => T.order.includes(x))) T.st.sel = new Set(d.sel);
+    T.st.from = Number.isFinite(d.from) ? d.from : null;
+    T.st.to = Number.isFinite(d.to) ? d.to : null;
+    if (Number(d.minGames) > 0) T.st.minGames = Number(d.minGames);
+    if (typeof d.group === 'string') T.st.group = d.group;
+    if (typeof d.player === 'string') T.st.player = d.player;
+    if (d.duo && typeof d.duo === 'object') T.st.duo = {...d.duo};
+    if (d.scopes && typeof d.scopes === 'object') {
+      for (const [id, sc] of Object.entries(d.scopes)) {
+        const card = document.getElementById(id);
+        if (!card || !sc) continue;
+        T.scopes.set(id, {team: sc.team || '', range: sc.range || ''});
+        card.querySelectorAll('.tsg-cf-team').forEach((x) => { x.value = sc.team || ''; x.classList.toggle('tsg-cf-on', !!sc.team); });
+        card.querySelectorAll('.tsg-cf-range').forEach((x) => x.classList.toggle('tsg-cf-on', !!sc.range));
+        card.classList.toggle('tsg-card-scoped', !!(sc.team || sc.range));
+      }
+    }
+    for (const [id, v] of Object.entries(d.selects || {})) {
+      const x = document.getElementById(id);
+      if (x && !x.dataset.draw && [...x.options].some((o) => o.value === v)) x.value = v;
+    }
+    T.st.minGames = Number(document.getElementById('mingames')?.value) || T.st.minGames;
+  };
+  restore();
+  syncTeams();
+  syncColumns();
+  syncPresets(T.st.from === null && T.st.to === null ? 'all' : '');
+  if (store) {
+    $$('.tsg-memory').forEach((x) => { x.hidden = false; });
+    T.root.addEventListener('change', saveSoon);
+    T.root.addEventListener('click', saveSoon);
+    $$('select').forEach((x) => x.addEventListener('change', saveSoon));
+    $$('#einstellungen-reset').forEach((b) => b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      clearTimeout(saveTimer);
+      try { store.removeItem(MEMKEY); } catch (err) { /* egal */ }
+      location.hash = '';
+      location.reload();
+    }));
+  }
 })();
