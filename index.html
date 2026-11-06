@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TSGV Rechberg · Alltime</title>
+<meta name="description" content="Spielerstatistik des TSGV Rechberg (1. Mannschaft und II) aus den FuPa-Aufstellungen.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="theme.css">
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="dash-shim.js"></script>
+</head>
+<body>
+<main id="dash-root">
+<style>
+  .tsg { display: flex; flex-direction: column; gap: var(--cds-gap-lg); font-family: var(--font-anthropic-sans); color: var(--color-fg); max-width: 82rem; margin-inline: auto; }
+  .tsg-head { display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
+  .tsg-stack { display: flex; flex-direction: column; gap: var(--cds-gap-lg); }
+  .tsg-eyebrow { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); letter-spacing: .06em; text-transform: uppercase; margin: 0; }
+  .tsg-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: calc(var(--cds-font-size-title) * 1.35); line-height: 1.15; margin: 0; text-wrap: balance; }
+  .tsg-lede { font-size: var(--cds-font-size-body); line-height: 1.55; max-width: 70ch; margin: 0; color: var(--color-fg-muted); }
+
+  /* Filterleiste: eingeklappt eine Zeile, aufgeklappt alle Regler */
+  details.tsg-filter { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); }
+  details.tsg-filter[open] { position: static; }
+  details.tsg-filter > summary { list-style: none; display: flex; align-items: center; gap: var(--cds-gap-sm); padding: var(--cds-pad-sm) var(--cds-pad-md); cursor: pointer; min-width: 0; }
+  details.tsg-filter > summary::-webkit-details-marker { display: none; }
+  .tsg-ftoggle { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: var(--cds-font-size-caption); font-weight: 600; padding: 2px var(--cds-pad-sm); border-radius: 999px; border: 1px solid var(--color-border-line); background: var(--color-bg); }
+  .tsg-ftoggle::after { content: ""; width: .4rem; height: .4rem; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg) translateY(-2px); transition: transform var(--cds-dur-slow); }
+  details.tsg-filter[open] .tsg-ftoggle::after { transform: rotate(-135deg) translateY(-1px); }
+  .tsg-fbody { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md) var(--cds-gap-xl); align-items: flex-end; padding: var(--cds-pad-sm) var(--cds-pad-md) var(--cds-pad-md); border-top: 1px solid var(--color-border-line); }
+  .tsg-fgroup { display: flex; flex-direction: column; gap: var(--cds-gap-xs); min-width: 0; }
+  .tsg-flabel { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); letter-spacing: .04em; text-transform: uppercase; }
+  .tsg-row { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); align-items: center; }
+  .tsg-team, .tsg-preset { font: inherit; font-size: var(--cds-font-size-body); display: inline-flex; align-items: center; gap: var(--cds-gap-xs); padding: var(--cds-pad-xs) var(--cds-pad-md); border-radius: 999px; border: 1px solid var(--color-border-line); background: var(--color-bg); color: var(--color-fg-muted); cursor: pointer; }
+  .tsg-preset { font-size: var(--cds-font-size-caption); padding: 2px var(--cds-pad-sm); }
+  .tsg-team[aria-pressed="true"], .tsg-preset[aria-pressed="true"] { color: var(--color-fg); font-weight: 600; border-color: var(--color-fg-muted); background: var(--color-panel); }
+  .tsg-team[aria-pressed="false"] .tsg-sw { opacity: .25; }
+  .tsg-team:disabled { cursor: not-allowed; }
+  .tsg-summary { flex: 1; min-width: 0; margin: 0; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  details.tsg-filter[open] .tsg-summary { white-space: normal; }
+  .tsg-summary b { color: var(--color-fg); font-weight: 600; }
+  .tsg .tsg-bilanzkurz b { color: var(--color-fg); font-weight: 600; }
+  .tsg-bilanzkurz { font-size: var(--cds-font-size-body); line-height: 1.6; }
+  .tsg button:focus-visible, .tsg-search:focus-visible, .tsg-select:focus-visible, .tsg a:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+  .tsg-select { font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); max-width: 100%; min-width: 0; }
+  .tsg-field { display: inline-flex; align-items: center; gap: var(--cds-gap-xs); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); flex-wrap: wrap; }
+
+  /* Reiter */
+  .tsg-tabs { display: flex; gap: var(--cds-gap-xs); border-bottom: 1px solid var(--color-border-line); overflow-x: auto; scrollbar-width: thin; }
+  .tsg-tab { font: inherit; font-size: var(--cds-font-size-body); background: none; border: 0; border-bottom: 2px solid transparent; padding: var(--cds-pad-sm) var(--cds-pad-md); color: var(--color-fg-muted); cursor: pointer; margin-bottom: -1px; white-space: nowrap; }
+  .tsg-tab[aria-selected="true"] { color: var(--color-fg); border-bottom-color: var(--color-fg); font-weight: 600; }
+  .tsg-intro { margin: 0; font-size: var(--cds-font-size-body); color: var(--color-fg-muted); max-width: 75ch; line-height: 1.5; }
+
+  /* Kacheln */
+  .tsg-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr)); gap: var(--cds-gap-md); }
+  .tsg-kpi { display: flex; flex-direction: column; gap: var(--cds-gap-xs); padding: var(--cds-pad-md) var(--cds-pad-lg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); min-width: 0; }
+  .tsg-kpi-label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; }
+  .tsg-kpi-num { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: calc(var(--cds-font-size-title) * 1.2); line-height: 1.1; font-variant-numeric: tabular-nums; margin: 0; min-height: 1.1em; overflow-wrap: anywhere; }
+  .tsg-kpi-sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; margin: 0; display: flex; flex-wrap: wrap; gap: 2px var(--cds-gap-sm); min-height: 1.3em; align-items: center; }
+  .tsg-kpi-sub span { display: inline-flex; align-items: center; gap: 4px; }
+  .tsg-spots { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--cds-gap-md); }
+  .tsg-spot { display: flex; flex-direction: column; gap: 2px; padding: var(--cds-pad-md) var(--cds-pad-lg); border-radius: var(--cds-radius); border: 1px solid var(--color-border-line); background: var(--color-bg); cursor: pointer; text-align: left; font: inherit; color: inherit; }
+  .tsg-spot:hover { border-color: var(--color-fg-muted); }
+  .tsg-spot-name { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-heading); min-height: 1.3em; }
+  .tsg-spot-val { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; min-height: 1.3em; }
+
+  .tsg-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); align-items: center; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); min-height: 1.2em; }
+  .tsg-legend span { display: inline-flex; align-items: center; gap: var(--cds-gap-xs); }
+  .tsg-sw { width: .7rem; height: .7rem; border-radius: 2px; display: inline-block; background: var(--cds-chart-muted); flex: none; }
+
+  .tsg-grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: var(--cds-gap-md); }
+  .tsg-grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: var(--cds-gap-md); }
+  .tsg-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: flex; flex-direction: column; gap: var(--cds-gap-sm); min-width: 0; }
+  .tsg-card h2, .tsg-card h3 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+  .tsg-card-head { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; justify-content: space-between; }
+  .tsg-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; line-height: 1.45; }
+  .tsg-mdesc { min-height: 1.45em; }
+  .tsg-section-title { font-size: var(--cds-font-size-title); font-weight: 400; font-family: var(--font-anthropic-serif); margin: 0; }
+
+  .tsg-chart { position: relative; min-height: 260px; }
+  .tsg-chart-sm { min-height: 200px; }
+  .tsg-chart svg { display: block; overflow: visible; }
+  .tsg-tick { fill: var(--color-fg-muted); font-size: var(--cds-font-size-caption); font-family: var(--font-anthropic-sans); font-variant-numeric: tabular-nums; }
+  .tsg-barval { fill: var(--color-fg); font-size: var(--cds-font-size-caption); font-family: var(--font-anthropic-sans); font-variant-numeric: tabular-nums; }
+  .tsg-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; white-space: nowrap; z-index: 3; }
+  .tsg-tip-h { color: var(--cds-text-secondary); margin-bottom: 2px; }
+  .tsg-tip-l { display: flex; align-items: center; gap: 6px; }
+
+  .tsg-lead { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--cds-gap-sm); min-height: 16rem; }
+  .tsg-lead li { display: grid; grid-template-columns: 1.8rem minmax(0, 1fr) auto; gap: 2px var(--cds-gap-sm); align-items: center; font-size: var(--cds-font-size-body); }
+  .tsg-lead li[data-name] { cursor: pointer; border-radius: 4px; }
+  .tsg-lead-wide li { grid-template-columns: 3.6rem minmax(0, 1fr) auto; }
+  .tsg-lead-wide .tsg-rank { text-align: left; }
+  .tsg-lead-short { min-height: 9rem; }
+  .tsg-fsum { color: var(--color-fg); }
+  .tsg-rb { display: flex; flex-direction: column; gap: var(--cds-gap-md); min-height: 6rem; }
+  .tsg-rb-match { display: flex; flex-direction: column; gap: 4px; padding-bottom: var(--cds-gap-sm); border-bottom: 1px solid var(--color-border-line); }
+  .tsg-rb-match:last-child { border-bottom: 0; }
+  .tsg-rb-head { display: flex; flex-wrap: wrap; gap: 2px var(--cds-gap-sm); align-items: baseline; font-size: var(--cds-font-size-body); }
+  .tsg-rb-head .tsg-score { font-size: var(--cds-font-size-heading); }
+  .tsg-rb-scorers { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .tsg-rb-events { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); }
+  .tsg-rb-events li { font-size: var(--cds-font-size-caption); padding: 2px var(--cds-pad-sm); border-radius: 999px; border: 1px solid var(--color-border-line); background: var(--color-bg); cursor: pointer; }
+  .tsg-rb-events li b { font-weight: 600; }
+  .tsg-rb-events li.tsg-rb-ms { border-color: var(--color-fg-muted); }
+  .tsg-lead li[data-name]:hover .tsg-pname { text-decoration: underline; }
+  .tsg-rank { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; text-align: right; }
+  .tsg-pname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tsg .tsg-pval { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+  .tsg-track { grid-column: 2 / 4; display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--cds-chart-grid); }
+  .tsg-track i { display: block; height: 100%; }
+  .tsg-psplit { grid-column: 2 / 4; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
+  .tsg-empty { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .tsg .tsg-good { color: var(--color-ok); }
+  .tsg .tsg-bad { color: var(--color-bad); }
+
+  .tsg-tools { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; justify-content: space-between; }
+  .tsg-search { font: inherit; font-size: var(--cds-font-size-body); padding: var(--cds-pad-xs) var(--cds-pad-sm); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-bg); color: var(--color-fg); width: min(100%, 15rem); }
+  .tsg-tablewrap { max-height: 34rem; overflow: auto; border-top: 1px solid var(--color-border-line); }
+  .tsg-tablewrap-sm { max-height: 22rem; }
+  .tsg-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-body); font-variant-numeric: tabular-nums; }
+  .tsg-table th { position: sticky; top: 0; background: var(--color-panel); text-align: right; font-weight: var(--cds-font-weight-medium); border-bottom: 1px solid var(--color-border-line); padding: 0; z-index: 1; }
+  .tsg-table th:first-child, .tsg-table td:first-child, .tsg-table th.tsg-l, .tsg-table td.tsg-l { text-align: left; }
+  .tsg-table td:first-child, .tsg-table th:first-child { position: sticky; left: 0; background: var(--color-panel); z-index: 1; }
+  .tsg-table th:first-child { z-index: 2; }
+  .tsg-th button { font: inherit; color: var(--color-fg-muted); background: none; border: 0; padding: var(--cds-pad-sm); cursor: pointer; width: 100%; text-align: inherit; white-space: nowrap; }
+  .tsg-th[aria-sort] button { color: var(--color-fg); }
+  .tsg-th[aria-sort="descending"] button::after { content: " ↓"; }
+  .tsg-th[aria-sort="ascending"] button::after { content: " ↑"; }
+  .tsg-table td { padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); text-align: right; white-space: nowrap; }
+  .tsg-table tbody tr:hover td { background: var(--color-bg); }
+  .tsg-clickrows tr { cursor: pointer; }
+  .tsg-chip { display: inline-block; font-size: var(--cds-font-size-caption); padding: 0 var(--cds-pad-xs); border-radius: 999px; border: 1px solid var(--color-border-line); color: var(--color-fg-muted); }
+  .tsg-chip-multi { color: var(--color-fg); font-weight: 600; }
+  .tsg-colpick { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); }
+
+  .tsg-matchlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--cds-gap-xs); min-height: 10rem; }
+  .tsg-matchlist li { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr) auto; gap: 0 var(--cds-gap-sm); align-items: baseline; font-size: var(--cds-font-size-body); padding-block: 2px; border-bottom: 1px solid var(--color-border-line); }
+  .tsg .tsg-score { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tsg-meta { grid-column: 2 / 4; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .tsg a { color: inherit; }
+  .tsg-fehl { max-height: 32rem; overflow: auto; }
+
+  details.tsg-glossary { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md) var(--cds-pad-lg); }
+  details.tsg-glossary summary { cursor: pointer; font-weight: var(--cds-font-weight-medium); }
+  .tsg-dl { display: grid; grid-template-columns: minmax(8rem, 14rem) 1fr; gap: var(--cds-gap-xs) var(--cds-gap-md); margin: var(--cds-gap-sm) 0 0; font-size: var(--cds-font-size-caption); }
+  .tsg-dl dt { font-weight: 600; }
+  .tsg-dl dd { margin: 0; color: var(--color-fg-muted); }
+  @media (max-width: 560px) { .tsg-dl { grid-template-columns: 1fr; } .tsg-dl dd { margin-bottom: var(--cds-gap-xs); } }
+
+  .tsg-fail { display: flex; align-items: center; justify-content: center; gap: var(--cds-gap-xs); color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); min-height: inherit; }
+  .tsg-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+  .tsg [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+  .tsg [data-dash-source-state=empty] { color: transparent; }
+  .tsg-foot { display: flex; flex-direction: column; gap: var(--cds-gap-sm); }
+  @media (max-width: 560px) {
+    .tsg { gap: var(--cds-gap-md); }
+    .tsg-title { font-size: var(--cds-font-size-title); }
+    .tsg-lede { font-size: var(--cds-font-size-caption); }
+    .tsg-fbody { gap: var(--cds-gap-sm) var(--cds-gap-md); }
+    .tsg-team, .tsg-select { font-size: var(--cds-font-size-caption); padding: 2px var(--cds-pad-sm); }
+    .tsg-kpi { padding: var(--cds-pad-sm) var(--cds-pad-md); }
+    .tsg-kpi-num { font-size: var(--cds-font-size-title); }
+    .tsg-card { padding: var(--cds-pad-md); }
+    .tsg-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--cds-gap-sm); }
+  }
+</style>
+
+<div class="tsg">
+  <header class="tsg-head" id="kopf">
+    <p class="tsg-eyebrow">TSGV Rechberg · Herren · FuPa-Statistik</p>
+    <h1 class="tsg-title">TSGV Rechberg · Alltime</h1>
+    <p class="tsg-lede">Alle Zahlen aus den FuPa-Aufstellungen der Ligaspiele. Über „Filter“ wählst du Mannschaft und Zeitraum.</p>
+  </header>
+
+  <details class="tsg-filter" id="auswahl">
+    <summary><span class="tsg-ftoggle">Filter</span><span class="tsg-summary" data-draw="summary" data-source="spielerspiele spiele">—</span></summary>
+    <div class="tsg-fbody">
+    <div class="tsg-fgroup">
+      <span class="tsg-flabel">Mannschaft</span>
+      <div class="tsg-row" role="group" aria-label="Mannschaft">
+        <button type="button" class="tsg-team" id="team-m1" data-team="m1" aria-pressed="false"><i class="tsg-sw" data-sw="m1"></i>1. Mannschaft</button>
+        <button type="button" class="tsg-team" id="team-ii" data-team="ii" aria-pressed="true"><i class="tsg-sw" data-sw="ii"></i>II (inkl. Reserve)</button>
+      </div>
+    </div>
+    <div class="tsg-fgroup">
+      <span class="tsg-flabel">Zeitraum</span>
+      <div class="tsg-row">
+        <select class="tsg-select" id="season-from" aria-label="Von Saison" data-draw="seasonsel" data-which="from" data-source="spiele"></select>
+        <span class="tsg-note">bis</span>
+        <select class="tsg-select" id="season-to" aria-label="Bis Saison" data-draw="seasonsel" data-which="to" data-source="spiele"></select>
+      </div>
+      <div class="tsg-row" role="group" aria-label="Schnellauswahl Zeitraum">
+        <button type="button" class="tsg-preset" data-preset="all" aria-pressed="true">Alle</button>
+        <button type="button" class="tsg-preset" data-preset="10" aria-pressed="false">Letzte 10</button>
+        <button type="button" class="tsg-preset" data-preset="5" aria-pressed="false">Letzte 5</button>
+        <button type="button" class="tsg-preset" data-preset="3" aria-pressed="false">Letzte 3</button>
+        <button type="button" class="tsg-preset" data-preset="1" aria-pressed="false">Aktuelle Saison</button>
+      </div>
+    </div>
+    <div class="tsg-fgroup">
+      <label class="tsg-flabel" for="mingames">Quoten ab</label>
+      <select class="tsg-select" id="mingames">
+        <option value="1">1 Einsatz</option>
+        <option value="5">5 Einsätzen</option>
+        <option value="10">10 Einsätzen</option>
+        <option value="20" selected>20 Einsätzen</option>
+        <option value="30">30 Einsätzen</option>
+        <option value="50">50 Einsätzen</option>
+      </select>
+    </div>
+    </div>
+  </details>
+
+  <nav class="tsg-tabs" role="tablist" aria-label="Bereiche">
+    <button type="button" class="tsg-tab" role="tab" id="tab-ueberblick" data-tab="ueberblick" aria-selected="true" aria-controls="ueberblick">Überblick</button>
+    <button type="button" class="tsg-tab" role="tab" id="tab-spieler" data-tab="spieler" aria-selected="false" aria-controls="spieler">Spieler</button>
+    <button type="button" class="tsg-tab" role="tab" id="tab-wechsel" data-tab="wechsel" aria-selected="false" aria-controls="wechsel">Wechsel &amp; Wirkung</button>
+    <button type="button" class="tsg-tab" role="tab" id="tab-kader" data-tab="kader" aria-selected="false" aria-controls="kader">Kader</button>
+    <button type="button" class="tsg-tab" role="tab" id="tab-mannschaft" data-tab="mannschaft" aria-selected="false" aria-controls="mannschaft">Mannschaft</button>
+    <button type="button" class="tsg-tab" role="tab" id="tab-rekorde" data-tab="rekorde" aria-selected="false" aria-controls="rekorde">Rekorde</button>
+    <button type="button" class="tsg-tab" role="tab" id="tab-fakten" data-tab="fakten" aria-selected="false" aria-controls="fakten">Fakten</button>
+    <button type="button" class="tsg-tab" role="tab" id="tab-daten" data-tab="daten" aria-selected="false" aria-controls="daten">Datenqualität</button>
+  </nav>
+
+  <!-- ÜBERBLICK -->
+  <section class="tsg-stack tsg-panel" id="ueberblick" role="tabpanel" aria-labelledby="tab-ueberblick">
+    <div class="tsg-card" id="rueckblick">
+      <div class="tsg-card-head">
+        <h2>Rückblick</h2>
+        <select class="tsg-select tsg-rb-range" id="rb-range" aria-label="Zeitraum des Rückblicks">
+          <option value="7" selected>Letzte 7 Tage</option>
+          <option value="last">Letzter Spieltag</option>
+          <option value="14">Letzte 14 Tage</option>
+          <option value="31">Letzte 31 Tage</option>
+        </select>
+      </div>
+      <p class="tsg-note tsg-rb-sum" data-draw="rbsum" data-source="spielerspiele spiele">—</p>
+      <div class="tsg-rb dash-skeleton" data-draw="rueckblick" data-source="spielerspiele spiele"></div>
+      <p class="tsg-note">Gezählt ab dem letzten Spiel in den Daten. Erste Male und Meilensteine beziehen sich auf alle bei FuPa erfassten Ligaspiele der gewählten Mannschaften.</p>
+    </div>
+
+    <div class="tsg-kpis" data-source="spielerspiele spiele">
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Ligaspiele</p><p class="tsg-kpi-num dash-skeleton" data-draw="kpi" data-k="games">—</p><p class="tsg-kpi-sub" data-draw="kpi" data-k="record">—</p></div>
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Spieler mit Einsatz</p><p class="tsg-kpi-num dash-skeleton" data-draw="kpi" data-k="players">—</p><p class="tsg-kpi-sub" data-draw="kpisplit" data-k="players">—</p></div>
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Tore der Spieler</p><p class="tsg-kpi-num dash-skeleton" data-draw="kpi" data-k="goals">—</p><p class="tsg-kpi-sub" data-draw="kpi" data-k="teamGoals">—</p></div>
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Vorlagen</p><p class="tsg-kpi-num dash-skeleton" data-draw="kpi" data-k="assists">—</p><p class="tsg-kpi-sub" data-draw="kpisplit" data-k="assists">—</p></div>
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Spielminuten</p><p class="tsg-kpi-num dash-skeleton" data-draw="kpi" data-k="minutes">—</p><p class="tsg-kpi-sub" data-draw="kpisplit" data-k="minutes">—</p></div>
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Karten</p><p class="tsg-kpi-num dash-skeleton" data-draw="kpi" data-k="cards">—</p><p class="tsg-kpi-sub" data-draw="kpi" data-k="cardsSplit">—</p></div>
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Einwechslungen</p><p class="tsg-kpi-num dash-skeleton" data-draw="kpi" data-k="subIn">—</p><p class="tsg-kpi-sub" data-draw="kpi" data-k="subInMin">—</p></div>
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Elfmeter verwandelt</p><p class="tsg-kpi-num dash-skeleton" data-draw="kpi" data-k="penHit">—</p><p class="tsg-kpi-sub" data-draw="kpi" data-k="penOf">—</p></div>
+    </div>
+
+    <div class="tsg-card" id="spotlights">
+      <h2>Auf einen Blick</h2>
+      <div class="tsg-spots" data-source="spielerspiele">
+        <button type="button" class="tsg-spot" data-spot="matches"><span class="tsg-kpi-label">Meiste Einsätze</span><span class="tsg-spot-name" data-draw="spot" data-part="name" data-metric="matches">—</span><span class="tsg-spot-val" data-draw="spot" data-part="val" data-metric="matches">—</span></button>
+        <button type="button" class="tsg-spot" data-spot="goals"><span class="tsg-kpi-label">Meiste Tore</span><span class="tsg-spot-name" data-draw="spot" data-part="name" data-metric="goals">—</span><span class="tsg-spot-val" data-draw="spot" data-part="val" data-metric="goals">—</span></button>
+        <button type="button" class="tsg-spot" data-spot="inGain"><span class="tsg-kpi-label">Bester Joker (Punkte nach Einwechslung)</span><span class="tsg-spot-name" data-draw="spot" data-part="name" data-metric="inGain">—</span><span class="tsg-spot-val" data-draw="spot" data-part="val" data-metric="inGain">—</span></button>
+        <button type="button" class="tsg-spot" data-spot="pmPer90"><span class="tsg-kpi-label">Bestes Plus/Minus pro 90 Min. (ab Mindest-Einsätzen)</span><span class="tsg-spot-name" data-draw="spot" data-part="name" data-metric="pmPer90">—</span><span class="tsg-spot-val" data-draw="spot" data-part="val" data-metric="pmPer90">—</span></button>
+      </div>
+      <p class="tsg-note">Klick auf einen Namen öffnet das Spielerprofil.</p>
+    </div>
+
+    <div class="tsg-card" id="saisonverlauf">
+      <div class="tsg-card-head">
+        <h2>Saisonverlauf</h2>
+        <label class="tsg-field" for="season-metric">Kennzahl
+          <select class="tsg-select tsg-season-metric" id="season-metric"><option value="matches" data-fmt="int" data-desc="Ligaspiele mit Einsatz – Startelf oder eingewechselt.">Einsätze</option><option value="starts" data-fmt="int" data-desc="Ligaspiele, in denen er von Anfang an gespielt hat.">Startelf-Einsätze</option><option value="full" data-fmt="int" data-desc="Von Anfang an dabei und weder ausgewechselt noch vom Platz gestellt.">Durchgespielt</option><option value="notFull" data-fmt="int" data-desc="Eingewechselt, ausgewechselt oder vom Platz gestellt.">Nicht durchgespielt</option><option value="subIn" data-fmt="int" data-desc="Wie oft er eingewechselt wurde.">Einwechslungen</option><option value="subOut" data-fmt="int" data-desc="Wie oft er ausgewechselt wurde.">Auswechslungen</option><option value="minutes" data-fmt="int" data-desc="Minuten laut FuPa-Aufstellung.">Spielminuten</option><option value="goals" data-fmt="int" data-desc="Tore in Ligaspielen." selected>Tore</option><option value="assists" data-fmt="int" data-desc="Torvorlagen in Ligaspielen.">Vorlagen</option><option value="points" data-fmt="int" data-desc="Tore plus Vorlagen.">Scorerpunkte</option><option value="wins" data-fmt="int" data-desc="Gewonnene Ligaspiele, in denen er gespielt hat.">Siege mit Einsatz</option><option value="cards" data-fmt="int" data-desc="Gelbe, Gelb-Rote und Rote Karten zusammen.">Karten gesamt</option><option value="yellow" data-fmt="int">Gelbe Karten</option><option value="yellowRed" data-fmt="int">Gelb-Rote Karten</option><option value="red" data-fmt="int">Rote Karten</option><option value="penHit" data-fmt="int">Elfmeter verwandelt</option><option value="penMiss" data-fmt="int">Elfmeter verschossen</option><option value="plusMinus" data-fmt="ints" data-need="pmGames" data-needmin="1" data-desc="Tore minus Gegentore, während er auf dem Platz stand. Nur Spiele, für die FuPa alle Torminuten hat.">Plus/Minus auf dem Platz</option><option value="players" data-fmt="int" data-desc="Verschiedene Spieler mit mindestens einem Einsatz in der Saison.">Eingesetzte Spieler</option></select>
+        </label>
+      </div>
+      <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="season-metric">—</p>
+      <div class="tsg-legend" data-draw="legend" data-source="spielerspiele"></div>
+      <div class="tsg-chart dash-skeleton" id="chart-saison" data-draw="saisonchart" data-source="spielerspiele"></div>
+      <p class="tsg-note">Summe aller Spieler je Saison, gestapelt nach Mannschaft. Die Saison 26/27 läuft noch.</p>
+    </div>
+
+    <div class="tsg-head" id="bestenliste">
+      <h2 class="tsg-section-title">Bestenlisten</h2>
+      <p class="tsg-note">Wähle für jede Liste eine Kennzahl. Quoten zählen erst ab der oben gewählten Zahl an Einsätzen. Klick auf einen Namen öffnet das Profil.</p>
+      <div class="tsg-grid3">
+        <div class="tsg-card">
+          <div class="tsg-card-head"><select class="tsg-select tsg-lead-metric" id="lead1-metric" aria-label="Kennzahl Liste 1"><optgroup label="Summen"><option value="matches" data-fmt="int" data-desc="Ligaspiele mit Einsatz – Startelf oder eingewechselt." selected>Einsätze</option><option value="starts" data-fmt="int" data-desc="Ligaspiele, in denen er von Anfang an gespielt hat.">Startelf-Einsätze</option><option value="full" data-fmt="int" data-desc="Von Anfang an dabei und weder ausgewechselt noch vom Platz gestellt.">Durchgespielt</option><option value="notFull" data-fmt="int" data-desc="Eingewechselt, ausgewechselt oder vom Platz gestellt.">Nicht durchgespielt</option><option value="subIn" data-fmt="int" data-desc="Wie oft er eingewechselt wurde.">Einwechslungen</option><option value="subOut" data-fmt="int" data-desc="Wie oft er ausgewechselt wurde.">Auswechslungen</option><option value="minutes" data-fmt="int" data-desc="Minuten laut FuPa-Aufstellung.">Spielminuten</option><option value="goals" data-fmt="int" data-desc="Tore in Ligaspielen.">Tore</option><option value="assists" data-fmt="int" data-desc="Torvorlagen in Ligaspielen.">Vorlagen</option><option value="points" data-fmt="int" data-desc="Tore plus Vorlagen.">Scorerpunkte</option><option value="wins" data-fmt="int" data-desc="Gewonnene Ligaspiele, in denen er gespielt hat.">Siege mit Einsatz</option><option value="cards" data-fmt="int" data-desc="Gelbe, Gelb-Rote und Rote Karten zusammen.">Karten gesamt</option><option value="yellow" data-fmt="int">Gelbe Karten</option><option value="yellowRed" data-fmt="int">Gelb-Rote Karten</option><option value="red" data-fmt="int">Rote Karten</option><option value="penHit" data-fmt="int">Elfmeter verwandelt</option><option value="penMiss" data-fmt="int">Elfmeter verschossen</option><option value="seasons" data-fmt="int" data-desc="In wie vielen Saisons er mindestens einmal gespielt hat.">Saisons mit Einsatz</option><option value="maxStreak" data-fmt="int" data-desc="Die meisten aufeinanderfolgenden Saisons mit Einsatz.">Längste Serie (Saisons am Stück)</option></optgroup><optgroup label="Anteile"><option value="goalShare" data-fmt="pct" data-desc="Seine Tore geteilt durch alle Tore der Spieler in der Auswahl.">Anteil an allen Toren</option><option value="pointShare" data-fmt="pct" data-desc="Seine Scorerpunkte geteilt durch alle Scorerpunkte in der Auswahl.">Anteil an allen Scorerpunkten</option><option value="minutesShare" data-fmt="pct" data-desc="Seine Minuten geteilt durch alle Spielerminuten in der Auswahl.">Anteil an allen Spielminuten</option></optgroup><optgroup label="Quoten"><option value="minPerGoal" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Tore – weniger ist besser.">Minuten pro Tor</option><option value="minPerPoint" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Tore plus Vorlagen – weniger ist besser.">Minuten pro Scorerpunkt</option><option value="goalsPerGame" data-fmt="d2" data-rate="1" data-desc="Tore geteilt durch Einsätze.">Tore pro Spiel</option><option value="pointsPerGame" data-fmt="d2" data-rate="1" data-desc="Tore plus Vorlagen geteilt durch Einsätze.">Scorerpunkte pro Spiel</option><option value="goalsPer90" data-fmt="d2" data-rate="1" data-desc="Tore hochgerechnet auf ein volles Spiel.">Tore pro 90 Minuten</option><option value="minPerGame" data-fmt="int" data-rate="1" data-desc="Durchschnittliche Spielzeit pro Einsatz.">Ø Minuten pro Einsatz</option><option value="playRate" data-fmt="pct" data-rate="1" data-desc="Gespielte Minuten im Verhältnis zu Einsätze × 90.">Spielzeit-Quote</option><option value="startRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze von Anfang an.">Startelf-Quote</option><option value="fullRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze über volle 90 Minuten.">Quote durchgespielt</option><option value="notFullRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze mit Ein-/Auswechslung oder Platzverweis.">Quote nicht durchgespielt</option><option value="subInRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze, in denen er eingewechselt wurde.">Anteil Einwechslungen</option><option value="subOutRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze, in denen er ausgewechselt wurde.">Anteil Auswechslungen</option><option value="cardsPerGame" data-fmt="d2" data-rate="1" data-desc="Karten geteilt durch Einsätze.">Karten pro Spiel</option><option value="minPerCard" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Karten – weniger heißt öfter verwarnt.">Minuten pro Karte</option><option value="penRate" data-fmt="pct" data-rate="1" data-need="penTotal" data-needmin="3" data-desc="Verwandelte geteilt durch geschossene Elfmeter.">Elfmeter-Quote (ab 3 Elfmetern)</option></optgroup><optgroup label="Wirkung"><option value="ppgWith" data-fmt="d2" data-rate="1" data-desc="Durchschnittliche Punkte der Mannschaft in Ligaspielen, in denen er gespielt hat.">Punkte pro Spiel mit ihm</option><option value="ppgDiff" data-fmt="d2s" data-rate="1" data-desc="Punkte pro Spiel mit ihm minus Punkte pro Spiel ohne ihn (Spiele seiner Mannschaften mit Aufstellung).">Punkte pro Spiel: mit minus ohne ihn</option><option value="winWith" data-fmt="pct" data-rate="1" data-desc="Anteil gewonnener Spiele, in denen er gespielt hat.">Siegquote mit ihm</option><option value="plusMinus" data-fmt="ints" data-need="pmGames" data-needmin="1" data-desc="Tore minus Gegentore, während er auf dem Platz stand. Nur Spiele, für die FuPa alle Torminuten hat.">Plus/Minus auf dem Platz</option><option value="pmPer90" data-fmt="d2s" data-rate="1" data-desc="Plus/Minus auf dem Platz hochgerechnet auf 90 Minuten.">Plus/Minus pro 90 Minuten</option><option value="inGain" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Einwechslung, in Punkten: + heißt, danach wurde es besser.">Punkte nach Einwechslung (Summe)</option><option value="inGainAvg" data-fmt="d2s" data-need="inN" data-needmin="5" data-desc="Wie oben, geteilt durch die Zahl seiner Einwechslungen mit Torminuten.">Ø Punkte-Veränderung pro Einwechslung (ab 5)</option><option value="inGD" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Einwechslung bis Spielende.">Tordifferenz nach Einwechslung</option><option value="inImproved" data-fmt="int" data-need="inN" data-needmin="1" data-desc="Einwechslungen, nach denen das Spiel mehr Punkte brachte als beim Wechsel.">Einwechslungen mit besserem Ergebnis</option><option value="outGain" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Auswechslung, in Punkten.">Punkte nach Auswechslung (Summe)</option><option value="outGD" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Auswechslung bis Spielende.">Tordifferenz nach Auswechslung</option></optgroup></select><select class="tsg-select tsg-lead-dir" id="lead1-dir" aria-label="Reihenfolge Liste 1"><option value="best" selected>Beste zuerst</option><option value="worst">Schwächste zuerst</option></select></div>
+          <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="lead1-metric">—</p>
+          <ol class="tsg-lead dash-skeleton" id="lead-1" data-draw="lead" data-source="spielerspiele"></ol>
+        </div>
+        <div class="tsg-card">
+          <div class="tsg-card-head"><select class="tsg-select tsg-lead-metric" id="lead2-metric" aria-label="Kennzahl Liste 2"><optgroup label="Summen"><option value="matches" data-fmt="int" data-desc="Ligaspiele mit Einsatz – Startelf oder eingewechselt.">Einsätze</option><option value="starts" data-fmt="int" data-desc="Ligaspiele, in denen er von Anfang an gespielt hat.">Startelf-Einsätze</option><option value="full" data-fmt="int" data-desc="Von Anfang an dabei und weder ausgewechselt noch vom Platz gestellt.">Durchgespielt</option><option value="notFull" data-fmt="int" data-desc="Eingewechselt, ausgewechselt oder vom Platz gestellt.">Nicht durchgespielt</option><option value="subIn" data-fmt="int" data-desc="Wie oft er eingewechselt wurde.">Einwechslungen</option><option value="subOut" data-fmt="int" data-desc="Wie oft er ausgewechselt wurde.">Auswechslungen</option><option value="minutes" data-fmt="int" data-desc="Minuten laut FuPa-Aufstellung.">Spielminuten</option><option value="goals" data-fmt="int" data-desc="Tore in Ligaspielen." selected>Tore</option><option value="assists" data-fmt="int" data-desc="Torvorlagen in Ligaspielen.">Vorlagen</option><option value="points" data-fmt="int" data-desc="Tore plus Vorlagen.">Scorerpunkte</option><option value="wins" data-fmt="int" data-desc="Gewonnene Ligaspiele, in denen er gespielt hat.">Siege mit Einsatz</option><option value="cards" data-fmt="int" data-desc="Gelbe, Gelb-Rote und Rote Karten zusammen.">Karten gesamt</option><option value="yellow" data-fmt="int">Gelbe Karten</option><option value="yellowRed" data-fmt="int">Gelb-Rote Karten</option><option value="red" data-fmt="int">Rote Karten</option><option value="penHit" data-fmt="int">Elfmeter verwandelt</option><option value="penMiss" data-fmt="int">Elfmeter verschossen</option><option value="seasons" data-fmt="int" data-desc="In wie vielen Saisons er mindestens einmal gespielt hat.">Saisons mit Einsatz</option><option value="maxStreak" data-fmt="int" data-desc="Die meisten aufeinanderfolgenden Saisons mit Einsatz.">Längste Serie (Saisons am Stück)</option></optgroup><optgroup label="Anteile"><option value="goalShare" data-fmt="pct" data-desc="Seine Tore geteilt durch alle Tore der Spieler in der Auswahl.">Anteil an allen Toren</option><option value="pointShare" data-fmt="pct" data-desc="Seine Scorerpunkte geteilt durch alle Scorerpunkte in der Auswahl.">Anteil an allen Scorerpunkten</option><option value="minutesShare" data-fmt="pct" data-desc="Seine Minuten geteilt durch alle Spielerminuten in der Auswahl.">Anteil an allen Spielminuten</option></optgroup><optgroup label="Quoten"><option value="minPerGoal" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Tore – weniger ist besser.">Minuten pro Tor</option><option value="minPerPoint" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Tore plus Vorlagen – weniger ist besser.">Minuten pro Scorerpunkt</option><option value="goalsPerGame" data-fmt="d2" data-rate="1" data-desc="Tore geteilt durch Einsätze.">Tore pro Spiel</option><option value="pointsPerGame" data-fmt="d2" data-rate="1" data-desc="Tore plus Vorlagen geteilt durch Einsätze.">Scorerpunkte pro Spiel</option><option value="goalsPer90" data-fmt="d2" data-rate="1" data-desc="Tore hochgerechnet auf ein volles Spiel.">Tore pro 90 Minuten</option><option value="minPerGame" data-fmt="int" data-rate="1" data-desc="Durchschnittliche Spielzeit pro Einsatz.">Ø Minuten pro Einsatz</option><option value="playRate" data-fmt="pct" data-rate="1" data-desc="Gespielte Minuten im Verhältnis zu Einsätze × 90.">Spielzeit-Quote</option><option value="startRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze von Anfang an.">Startelf-Quote</option><option value="fullRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze über volle 90 Minuten.">Quote durchgespielt</option><option value="notFullRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze mit Ein-/Auswechslung oder Platzverweis.">Quote nicht durchgespielt</option><option value="subInRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze, in denen er eingewechselt wurde.">Anteil Einwechslungen</option><option value="subOutRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze, in denen er ausgewechselt wurde.">Anteil Auswechslungen</option><option value="cardsPerGame" data-fmt="d2" data-rate="1" data-desc="Karten geteilt durch Einsätze.">Karten pro Spiel</option><option value="minPerCard" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Karten – weniger heißt öfter verwarnt.">Minuten pro Karte</option><option value="penRate" data-fmt="pct" data-rate="1" data-need="penTotal" data-needmin="3" data-desc="Verwandelte geteilt durch geschossene Elfmeter.">Elfmeter-Quote (ab 3 Elfmetern)</option></optgroup><optgroup label="Wirkung"><option value="ppgWith" data-fmt="d2" data-rate="1" data-desc="Durchschnittliche Punkte der Mannschaft in Ligaspielen, in denen er gespielt hat.">Punkte pro Spiel mit ihm</option><option value="ppgDiff" data-fmt="d2s" data-rate="1" data-desc="Punkte pro Spiel mit ihm minus Punkte pro Spiel ohne ihn (Spiele seiner Mannschaften mit Aufstellung).">Punkte pro Spiel: mit minus ohne ihn</option><option value="winWith" data-fmt="pct" data-rate="1" data-desc="Anteil gewonnener Spiele, in denen er gespielt hat.">Siegquote mit ihm</option><option value="plusMinus" data-fmt="ints" data-need="pmGames" data-needmin="1" data-desc="Tore minus Gegentore, während er auf dem Platz stand. Nur Spiele, für die FuPa alle Torminuten hat.">Plus/Minus auf dem Platz</option><option value="pmPer90" data-fmt="d2s" data-rate="1" data-desc="Plus/Minus auf dem Platz hochgerechnet auf 90 Minuten.">Plus/Minus pro 90 Minuten</option><option value="inGain" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Einwechslung, in Punkten: + heißt, danach wurde es besser.">Punkte nach Einwechslung (Summe)</option><option value="inGainAvg" data-fmt="d2s" data-need="inN" data-needmin="5" data-desc="Wie oben, geteilt durch die Zahl seiner Einwechslungen mit Torminuten.">Ø Punkte-Veränderung pro Einwechslung (ab 5)</option><option value="inGD" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Einwechslung bis Spielende.">Tordifferenz nach Einwechslung</option><option value="inImproved" data-fmt="int" data-need="inN" data-needmin="1" data-desc="Einwechslungen, nach denen das Spiel mehr Punkte brachte als beim Wechsel.">Einwechslungen mit besserem Ergebnis</option><option value="outGain" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Auswechslung, in Punkten.">Punkte nach Auswechslung (Summe)</option><option value="outGD" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Auswechslung bis Spielende.">Tordifferenz nach Auswechslung</option></optgroup></select><select class="tsg-select tsg-lead-dir" id="lead2-dir" aria-label="Reihenfolge Liste 2"><option value="best" selected>Beste zuerst</option><option value="worst">Schwächste zuerst</option></select></div>
+          <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="lead2-metric">—</p>
+          <ol class="tsg-lead dash-skeleton" id="lead-2" data-draw="lead" data-source="spielerspiele"></ol>
+        </div>
+        <div class="tsg-card">
+          <div class="tsg-card-head"><select class="tsg-select tsg-lead-metric" id="lead3-metric" aria-label="Kennzahl Liste 3"><optgroup label="Summen"><option value="matches" data-fmt="int" data-desc="Ligaspiele mit Einsatz – Startelf oder eingewechselt.">Einsätze</option><option value="starts" data-fmt="int" data-desc="Ligaspiele, in denen er von Anfang an gespielt hat.">Startelf-Einsätze</option><option value="full" data-fmt="int" data-desc="Von Anfang an dabei und weder ausgewechselt noch vom Platz gestellt.">Durchgespielt</option><option value="notFull" data-fmt="int" data-desc="Eingewechselt, ausgewechselt oder vom Platz gestellt.">Nicht durchgespielt</option><option value="subIn" data-fmt="int" data-desc="Wie oft er eingewechselt wurde.">Einwechslungen</option><option value="subOut" data-fmt="int" data-desc="Wie oft er ausgewechselt wurde.">Auswechslungen</option><option value="minutes" data-fmt="int" data-desc="Minuten laut FuPa-Aufstellung.">Spielminuten</option><option value="goals" data-fmt="int" data-desc="Tore in Ligaspielen.">Tore</option><option value="assists" data-fmt="int" data-desc="Torvorlagen in Ligaspielen.">Vorlagen</option><option value="points" data-fmt="int" data-desc="Tore plus Vorlagen.">Scorerpunkte</option><option value="wins" data-fmt="int" data-desc="Gewonnene Ligaspiele, in denen er gespielt hat.">Siege mit Einsatz</option><option value="cards" data-fmt="int" data-desc="Gelbe, Gelb-Rote und Rote Karten zusammen.">Karten gesamt</option><option value="yellow" data-fmt="int">Gelbe Karten</option><option value="yellowRed" data-fmt="int">Gelb-Rote Karten</option><option value="red" data-fmt="int">Rote Karten</option><option value="penHit" data-fmt="int">Elfmeter verwandelt</option><option value="penMiss" data-fmt="int">Elfmeter verschossen</option><option value="seasons" data-fmt="int" data-desc="In wie vielen Saisons er mindestens einmal gespielt hat.">Saisons mit Einsatz</option><option value="maxStreak" data-fmt="int" data-desc="Die meisten aufeinanderfolgenden Saisons mit Einsatz.">Längste Serie (Saisons am Stück)</option></optgroup><optgroup label="Anteile"><option value="goalShare" data-fmt="pct" data-desc="Seine Tore geteilt durch alle Tore der Spieler in der Auswahl.">Anteil an allen Toren</option><option value="pointShare" data-fmt="pct" data-desc="Seine Scorerpunkte geteilt durch alle Scorerpunkte in der Auswahl.">Anteil an allen Scorerpunkten</option><option value="minutesShare" data-fmt="pct" data-desc="Seine Minuten geteilt durch alle Spielerminuten in der Auswahl.">Anteil an allen Spielminuten</option></optgroup><optgroup label="Quoten"><option value="minPerGoal" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Tore – weniger ist besser." selected>Minuten pro Tor</option><option value="minPerPoint" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Tore plus Vorlagen – weniger ist besser.">Minuten pro Scorerpunkt</option><option value="goalsPerGame" data-fmt="d2" data-rate="1" data-desc="Tore geteilt durch Einsätze.">Tore pro Spiel</option><option value="pointsPerGame" data-fmt="d2" data-rate="1" data-desc="Tore plus Vorlagen geteilt durch Einsätze.">Scorerpunkte pro Spiel</option><option value="goalsPer90" data-fmt="d2" data-rate="1" data-desc="Tore hochgerechnet auf ein volles Spiel.">Tore pro 90 Minuten</option><option value="minPerGame" data-fmt="int" data-rate="1" data-desc="Durchschnittliche Spielzeit pro Einsatz.">Ø Minuten pro Einsatz</option><option value="playRate" data-fmt="pct" data-rate="1" data-desc="Gespielte Minuten im Verhältnis zu Einsätze × 90.">Spielzeit-Quote</option><option value="startRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze von Anfang an.">Startelf-Quote</option><option value="fullRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze über volle 90 Minuten.">Quote durchgespielt</option><option value="notFullRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze mit Ein-/Auswechslung oder Platzverweis.">Quote nicht durchgespielt</option><option value="subInRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze, in denen er eingewechselt wurde.">Anteil Einwechslungen</option><option value="subOutRate" data-fmt="pct" data-rate="1" data-desc="Anteil der Einsätze, in denen er ausgewechselt wurde.">Anteil Auswechslungen</option><option value="cardsPerGame" data-fmt="d2" data-rate="1" data-desc="Karten geteilt durch Einsätze.">Karten pro Spiel</option><option value="minPerCard" data-fmt="int" data-rate="1" data-low="1" data-desc="Spielminuten geteilt durch Karten – weniger heißt öfter verwarnt.">Minuten pro Karte</option><option value="penRate" data-fmt="pct" data-rate="1" data-need="penTotal" data-needmin="3" data-desc="Verwandelte geteilt durch geschossene Elfmeter.">Elfmeter-Quote (ab 3 Elfmetern)</option></optgroup><optgroup label="Wirkung"><option value="ppgWith" data-fmt="d2" data-rate="1" data-desc="Durchschnittliche Punkte der Mannschaft in Ligaspielen, in denen er gespielt hat.">Punkte pro Spiel mit ihm</option><option value="ppgDiff" data-fmt="d2s" data-rate="1" data-desc="Punkte pro Spiel mit ihm minus Punkte pro Spiel ohne ihn (Spiele seiner Mannschaften mit Aufstellung).">Punkte pro Spiel: mit minus ohne ihn</option><option value="winWith" data-fmt="pct" data-rate="1" data-desc="Anteil gewonnener Spiele, in denen er gespielt hat.">Siegquote mit ihm</option><option value="plusMinus" data-fmt="ints" data-need="pmGames" data-needmin="1" data-desc="Tore minus Gegentore, während er auf dem Platz stand. Nur Spiele, für die FuPa alle Torminuten hat.">Plus/Minus auf dem Platz</option><option value="pmPer90" data-fmt="d2s" data-rate="1" data-desc="Plus/Minus auf dem Platz hochgerechnet auf 90 Minuten.">Plus/Minus pro 90 Minuten</option><option value="inGain" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Einwechslung, in Punkten: + heißt, danach wurde es besser.">Punkte nach Einwechslung (Summe)</option><option value="inGainAvg" data-fmt="d2s" data-need="inN" data-needmin="5" data-desc="Wie oben, geteilt durch die Zahl seiner Einwechslungen mit Torminuten.">Ø Punkte-Veränderung pro Einwechslung (ab 5)</option><option value="inGD" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Einwechslung bis Spielende.">Tordifferenz nach Einwechslung</option><option value="inImproved" data-fmt="int" data-need="inN" data-needmin="1" data-desc="Einwechslungen, nach denen das Spiel mehr Punkte brachte als beim Wechsel.">Einwechslungen mit besserem Ergebnis</option><option value="outGain" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Auswechslung, in Punkten.">Punkte nach Auswechslung (Summe)</option><option value="outGD" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Auswechslung bis Spielende.">Tordifferenz nach Auswechslung</option></optgroup></select><select class="tsg-select tsg-lead-dir" id="lead3-dir" aria-label="Reihenfolge Liste 3"><option value="best" selected>Beste zuerst</option><option value="worst">Schwächste zuerst</option></select></div>
+          <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="lead3-metric">—</p>
+          <ol class="tsg-lead dash-skeleton" id="lead-3" data-draw="lead" data-source="spielerspiele"></ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPIELER -->
+  <section class="tsg-stack tsg-panel" id="spieler" role="tabpanel" aria-labelledby="tab-spieler" hidden>
+    <div class="tsg-card" id="spielerprofil">
+      <div class="tsg-card-head">
+        <h2>Spielerprofil</h2>
+        <label class="tsg-field" for="profil-spieler">Spieler
+          <select class="tsg-select" id="profil-spieler" data-draw="profilwahl" data-source="spielerspiele"></select>
+        </label>
+      </div>
+      <div class="tsg-kpis" data-source="spielerspiele spiele">
+        <div class="tsg-kpi"><p class="tsg-kpi-label">Teams</p><p class="tsg-kpi-num dash-skeleton" data-draw="pval" data-field="teams" data-fmt="text">—</p><p class="tsg-kpi-sub"><span data-draw="pval" data-field="span" data-fmt="text">—</span></p></div>
+        <div class="tsg-kpi"><p class="tsg-kpi-label">Einsätze</p><p class="tsg-kpi-num dash-skeleton" data-draw="pval" data-field="matches">—</p><p class="tsg-kpi-sub"><span><span data-draw="pval" data-field="starts">—</span> Startelf</span><span><span data-draw="pval" data-field="subIn">—</span> eingewechselt</span></p></div>
+        <div class="tsg-kpi"><p class="tsg-kpi-label">Tore · Vorlagen</p><p class="tsg-kpi-num"><span data-draw="pval" data-field="goals">—</span> · <span data-draw="pval" data-field="assists">—</span></p><p class="tsg-kpi-sub"><span><span data-draw="pval" data-field="minPerPoint">—</span> Min. pro Scorerpunkt</span></p></div>
+        <div class="tsg-kpi"><p class="tsg-kpi-label">Spielzeit</p><p class="tsg-kpi-num dash-skeleton" data-draw="pval" data-field="minutes">—</p><p class="tsg-kpi-sub"><span><span data-draw="pval" data-field="full">—</span> × durchgespielt</span><span>Quote <span data-draw="pval" data-field="playRate" data-fmt="pct">—</span></span></p></div>
+        <div class="tsg-kpi"><p class="tsg-kpi-label">Punkte pro Spiel mit ihm</p><p class="tsg-kpi-num dash-skeleton" data-draw="pval" data-field="ppgWith" data-fmt="d2">—</p><p class="tsg-kpi-sub"><span>ohne ihn <span data-draw="pval" data-field="ppgWithout" data-fmt="d2">—</span></span><span>Differenz <span data-draw="pval" data-field="ppgDiff" data-fmt="d2s" data-signed="1">—</span></span></p></div>
+        <div class="tsg-kpi"><p class="tsg-kpi-label">Plus/Minus auf dem Platz</p><p class="tsg-kpi-num dash-skeleton" data-draw="pval" data-field="plusMinus" data-fmt="ints" data-signed="1">—</p><p class="tsg-kpi-sub"><span><span data-draw="pval" data-field="pmPer90" data-fmt="d2s">—</span> pro 90 Min.</span><span>aus <span data-draw="pval" data-field="pmGames">—</span> Spielen</span></p></div>
+        <div class="tsg-kpi"><p class="tsg-kpi-label">Punkte nach Einwechslung</p><p class="tsg-kpi-num dash-skeleton" data-draw="pval" data-field="inGain" data-fmt="ints" data-signed="1">—</p><p class="tsg-kpi-sub"><span>aus <span data-draw="pval" data-field="inN">—</span> Einwechslungen</span><span>Tordiff. <span data-draw="pval" data-field="inGD" data-fmt="ints">—</span></span></p></div>
+        <div class="tsg-kpi"><p class="tsg-kpi-label">Karten</p><p class="tsg-kpi-num dash-skeleton" data-draw="pval" data-field="cards">—</p><p class="tsg-kpi-sub"><span>längste Serie <span data-draw="pval" data-field="maxStreak">—</span> Saisons</span></p></div>
+      </div>
+      <div class="tsg-grid2">
+        <div class="tsg-head">
+          <div class="tsg-card-head">
+            <h3>Saison für Saison</h3>
+            <select class="tsg-select tsg-profil-metric" id="profil-metric" aria-label="Kennzahl im Saisonverlauf des Spielers">
+              <option value="matches" selected>Einsätze</option>
+              <option value="minutes">Spielminuten</option>
+              <option value="goals">Tore</option>
+              <option value="assists">Vorlagen</option>
+              <option value="points">Scorerpunkte</option>
+              <option value="full">Durchgespielt</option>
+              <option value="subIn">Einwechslungen</option>
+              <option value="cards">Karten</option>
+            </select>
+          </div>
+          <div class="tsg-legend" data-draw="legend" data-source="spielerspiele"></div>
+          <div class="tsg-chart tsg-chart-sm dash-skeleton" id="chart-profil" data-draw="profilchart" data-source="spielerspiele"></div>
+        </div>
+        <div class="tsg-head">
+          <h3>Letzte Spiele</h3>
+          <ol class="tsg-matchlist dash-skeleton" data-draw="profilspiele" data-source="spielerspiele spiele"></ol>
+        </div>
+      </div>
+      <div class="tsg-tablewrap tsg-tablewrap-sm">
+        <table class="tsg-table" id="tbl-profil" data-source="spielerspiele">
+          <thead><tr>
+            <th class="tsg-th" data-field="season" data-fmt="text"><button type="button">Saison</button></th>
+            <th class="tsg-th tsg-l" data-field="team" data-fmt="text"><button type="button">Team</button></th>
+            <th class="tsg-th" data-field="matches" data-fmt="int"><button type="button">Einsätze</button></th>
+            <th class="tsg-th" data-field="starts" data-fmt="int"><button type="button">Startelf</button></th>
+            <th class="tsg-th" data-field="full" data-fmt="int"><button type="button">Durchgesp.</button></th>
+            <th class="tsg-th" data-field="minutes" data-fmt="int"><button type="button">Minuten</button></th>
+            <th class="tsg-th" data-field="goals" data-fmt="int"><button type="button">Tore</button></th>
+            <th class="tsg-th" data-field="assists" data-fmt="int"><button type="button">Vorlagen</button></th>
+            <th class="tsg-th" data-field="subIn" data-fmt="int"><button type="button">Eingew.</button></th>
+            <th class="tsg-th" data-field="subOut" data-fmt="int"><button type="button">Ausgew.</button></th>
+            <th class="tsg-th" data-field="plusMinus" data-fmt="ints"><button type="button">+/−</button></th>
+            <th class="tsg-th" data-field="cards" data-fmt="int"><button type="button">Karten</button></th>
+          </tr></thead>
+          <tbody data-draw="profiltabelle"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tsg-card" id="spielerbilanz">
+      <div class="tsg-card-head">
+        <h2>Bilanz von <span data-draw="pval" data-field="name" data-fmt="text">—</span></h2>
+        <div class="tsg-row tsg-bviewpick" role="group" aria-label="Bilanz-Ansicht">
+          <button type="button" class="tsg-preset" data-bview="mit" aria-pressed="true">Mitspieler</button>
+          <button type="button" class="tsg-preset" data-bview="vorlagen" aria-pressed="false">Vorlagen-Partner</button>
+          <button type="button" class="tsg-preset" data-bview="gegner" aria-pressed="false">Gegner</button>
+        </div>
+      </div>
+      <p class="tsg-note tsg-bilanzkurz" data-draw="bilanzkurz" data-source="spielerspiele spiele">—</p>
+      <div class="tsg-head" data-bview-panel="mit">
+        <p class="tsg-note">Mitspieler, mit denen er im selben Ligaspiel eingesetzt war, und wie diese Spiele ausgingen. Klick auf eine Zeile öffnet das Profil des Mitspielers.</p>
+        <div class="tsg-tablewrap tsg-tablewrap-sm">
+          <table class="tsg-table" id="tbl-mit" data-source="spielerspiele spiele">
+            <thead><tr>
+              <th class="tsg-th" data-field="name" data-fmt="text"><button type="button">Mitspieler</button></th>
+              <th class="tsg-th" data-field="games" data-fmt="int" aria-sort="descending"><button type="button">Spiele zusammen</button></th>
+              <th class="tsg-th" data-field="wins" data-fmt="int"><button type="button">S</button></th>
+              <th class="tsg-th" data-field="draws" data-fmt="int"><button type="button">U</button></th>
+              <th class="tsg-th" data-field="defeats" data-fmt="int"><button type="button">N</button></th>
+              <th class="tsg-th" data-field="ppg" data-fmt="d2"><button type="button">Pkt./Sp.</button></th>
+              <th class="tsg-th" data-field="winRate" data-fmt="pct"><button type="button">Siegquote</button></th>
+              <th class="tsg-th" data-field="bothScored" data-fmt="int"><button type="button">beide getroffen</button></th>
+            </tr></thead>
+            <tbody class="tsg-clickrows" data-draw="mittabelle"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tsg-head" data-bview-panel="vorlagen" hidden>
+        <p class="tsg-note">FuPa speichert nicht, wer wem ein Tor vorgelegt hat. „Sicher“ zählt nur Spiele, in denen es neben dem Vorlagengeber genau einen Torschützen gab. „Im selben Spiel“ zählt Spiele, in denen der eine vorlegte und der andere traf. Das ist ein Hinweis, kein Beweis.</p>
+        <div class="tsg-tablewrap tsg-tablewrap-sm">
+          <table class="tsg-table" id="tbl-vorl" data-source="spielerspiele">
+            <thead><tr>
+              <th class="tsg-th" data-field="name" data-fmt="text"><button type="button">Mitspieler</button></th>
+              <th class="tsg-th" data-field="gaveSure" data-fmt="int"><button type="button">Er legt auf ihn vor (sicher)</button></th>
+              <th class="tsg-th" data-field="gotSure" data-fmt="int"><button type="button">Er bekommt Vorlage von ihm (sicher)</button></th>
+              <th class="tsg-th" data-field="gavePossible" data-fmt="int" aria-sort="descending"><button type="button">Er legt vor, Mitspieler trifft (Spiele)</button></th>
+              <th class="tsg-th" data-field="gotPossible" data-fmt="int"><button type="button">Mitspieler legt vor, er trifft (Spiele)</button></th>
+            </tr></thead>
+            <tbody class="tsg-clickrows" data-draw="vorltabelle"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tsg-head" data-bview-panel="gegner" hidden>
+        <p class="tsg-note">Seine Ligaspiele je Gegner: Ergebnis der Mannschaft und seine Tore und Vorlagen.</p>
+        <div class="tsg-tablewrap tsg-tablewrap-sm">
+          <table class="tsg-table" id="tbl-pgeg" data-source="spielerspiele spiele">
+            <thead><tr>
+              <th class="tsg-th" data-field="opponent" data-fmt="text"><button type="button">Gegner</button></th>
+              <th class="tsg-th" data-field="matches" data-fmt="int"><button type="button">Spiele</button></th>
+              <th class="tsg-th" data-field="wins" data-fmt="int"><button type="button">S</button></th>
+              <th class="tsg-th" data-field="draws" data-fmt="int"><button type="button">U</button></th>
+              <th class="tsg-th" data-field="defeats" data-fmt="int"><button type="button">N</button></th>
+              <th class="tsg-th" data-field="ppg" data-fmt="d2"><button type="button">Pkt./Sp.</button></th>
+              <th class="tsg-th" data-field="goals" data-fmt="int" aria-sort="descending"><button type="button">Tore</button></th>
+              <th class="tsg-th" data-field="assists" data-fmt="int"><button type="button">Vorlagen</button></th>
+              <th class="tsg-th" data-field="goalsPerGame" data-fmt="d2"><button type="button">Tore/Spiel</button></th>
+            </tr></thead>
+            <tbody data-draw="pgegtabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="tsg-card" id="alle-spieler">
+      <div class="tsg-tools">
+        <h2>Alle Spieler</h2>
+        <input class="tsg-search" id="spielersuche" type="search" placeholder="Spieler suchen" aria-label="Spieler suchen">
+      </div>
+      <div class="tsg-colpick" role="group" aria-label="Spalten">
+        <button type="button" class="tsg-preset" data-group="overview" aria-pressed="true">Überblick</button>
+        <button type="button" class="tsg-preset" data-group="scoring" aria-pressed="false">Tore &amp; Scorer</button>
+        <button type="button" class="tsg-preset" data-group="time" aria-pressed="false">Spielzeit &amp; Wechsel</button>
+        <button type="button" class="tsg-preset" data-group="impact" aria-pressed="false">Wirkung</button>
+        <button type="button" class="tsg-preset" data-group="cards" aria-pressed="false">Karten</button>
+        <button type="button" class="tsg-preset" data-group="pens" aria-pressed="false">Elfmeter</button>
+      </div>
+      <p class="tsg-note">Spaltenkopf anklicken zum Sortieren, Zeile anklicken für das Profil.</p>
+      <div class="tsg-tablewrap">
+        <table class="tsg-table" id="tbl-spieler" data-source="spielerspiele">
+          <thead>
+            <tr>
+              <th class="tsg-th" data-field="name" data-fmt="text" data-groups="all"><button type="button">Spieler</button></th>
+              <th class="tsg-th tsg-l" data-field="teams" data-fmt="chip" data-groups="overview"><button type="button">Teams</button></th>
+              <th class="tsg-th tsg-l" data-field="span" data-fmt="text" data-groups="overview"><button type="button">Zeitraum</button></th>
+              <th class="tsg-th" data-field="seasons" data-fmt="int" data-groups="overview"><button type="button">Saisons</button></th>
+              <th class="tsg-th" data-field="matches" data-fmt="int" data-groups="overview scoring time impact cards pens" aria-sort="descending"><button type="button">Einsätze</button></th>
+              <th class="tsg-th" data-field="starts" data-fmt="int" data-groups="time" hidden><button type="button">Startelf</button></th>
+              <th class="tsg-th" data-field="full" data-fmt="int" data-groups="time" hidden><button type="button">Durchgesp.</button></th>
+              <th class="tsg-th" data-field="notFull" data-fmt="int" data-groups="time" hidden><button type="button">Nicht durchgesp.</button></th>
+              <th class="tsg-th" data-field="subIn" data-fmt="int" data-groups="time" hidden><button type="button">Eingew.</button></th>
+              <th class="tsg-th" data-field="subOut" data-fmt="int" data-groups="time" hidden><button type="button">Ausgew.</button></th>
+              <th class="tsg-th" data-field="fullRate" data-fmt="pct" data-groups="time" hidden><button type="button">Quote durchgesp.</button></th>
+              <th class="tsg-th" data-field="notFullRate" data-fmt="pct" data-groups="time" hidden><button type="button">Quote nicht durchgesp.</button></th>
+              <th class="tsg-th" data-field="playRate" data-fmt="pct" data-groups="time" hidden><button type="button">Spielzeit-Quote</button></th>
+              <th class="tsg-th" data-field="minutes" data-fmt="int" data-groups="overview scoring time cards"><button type="button">Minuten</button></th>
+              <th class="tsg-th" data-field="minPerGame" data-fmt="int" data-groups="time" hidden><button type="button">Ø Min.</button></th>
+              <th class="tsg-th" data-field="minutesShare" data-fmt="pct" data-groups="time" hidden><button type="button">Anteil Min.</button></th>
+              <th class="tsg-th" data-field="goals" data-fmt="int" data-groups="overview scoring pens"><button type="button">Tore</button></th>
+              <th class="tsg-th" data-field="assists" data-fmt="int" data-groups="overview scoring"><button type="button">Vorlagen</button></th>
+              <th class="tsg-th" data-field="points" data-fmt="int" data-groups="overview scoring"><button type="button">Scorer</button></th>
+              <th class="tsg-th" data-field="minPerGoal" data-fmt="int" data-groups="scoring" hidden><button type="button">Min./Tor</button></th>
+              <th class="tsg-th" data-field="minPerPoint" data-fmt="int" data-groups="scoring" hidden><button type="button">Min./Scorer</button></th>
+              <th class="tsg-th" data-field="goalsPerGame" data-fmt="d2" data-groups="scoring" hidden><button type="button">Tore/Spiel</button></th>
+              <th class="tsg-th" data-field="pointsPerGame" data-fmt="d2" data-groups="scoring" hidden><button type="button">Scorer/Spiel</button></th>
+              <th class="tsg-th" data-field="goalsPer90" data-fmt="d2" data-groups="scoring" hidden><button type="button">Tore/90</button></th>
+              <th class="tsg-th" data-field="goalShare" data-fmt="pct" data-groups="scoring" hidden><button type="button">Anteil Tore</button></th>
+              <th class="tsg-th" data-field="ppgWith" data-fmt="d2" data-groups="impact" hidden><button type="button">Pkt./Sp. mit</button></th>
+              <th class="tsg-th" data-field="ppgWithout" data-fmt="d2" data-groups="impact" hidden><button type="button">Pkt./Sp. ohne</button></th>
+              <th class="tsg-th" data-field="ppgDiff" data-fmt="d2s" data-groups="impact" hidden><button type="button">Differenz</button></th>
+              <th class="tsg-th" data-field="winWith" data-fmt="pct" data-groups="impact" hidden><button type="button">Siegquote</button></th>
+              <th class="tsg-th" data-field="plusMinus" data-fmt="ints" data-groups="impact" hidden><button type="button">+/−</button></th>
+              <th class="tsg-th" data-field="pmPer90" data-fmt="d2s" data-groups="impact" hidden><button type="button">+/− pro 90</button></th>
+              <th class="tsg-th" data-field="inN" data-fmt="int" data-groups="impact" hidden><button type="button">Einw. mit Daten</button></th>
+              <th class="tsg-th" data-field="inGain" data-fmt="ints" data-groups="impact" hidden><button type="button">Pkt. nach Einw.</button></th>
+              <th class="tsg-th" data-field="inGD" data-fmt="ints" data-groups="impact" hidden><button type="button">Tordiff. nach Einw.</button></th>
+              <th class="tsg-th" data-field="outN" data-fmt="int" data-groups="impact" hidden><button type="button">Ausw. mit Daten</button></th>
+              <th class="tsg-th" data-field="outGain" data-fmt="ints" data-groups="impact" hidden><button type="button">Pkt. nach Ausw.</button></th>
+              <th class="tsg-th" data-field="outGD" data-fmt="ints" data-groups="impact" hidden><button type="button">Tordiff. nach Ausw.</button></th>
+              <th class="tsg-th" data-field="yellow" data-fmt="int" data-groups="cards" hidden><button type="button">Gelb</button></th>
+              <th class="tsg-th" data-field="yellowRed" data-fmt="int" data-groups="cards" hidden><button type="button">Gelb-Rot</button></th>
+              <th class="tsg-th" data-field="red" data-fmt="int" data-groups="cards" hidden><button type="button">Rot</button></th>
+              <th class="tsg-th" data-field="cards" data-fmt="int" data-groups="overview cards"><button type="button">Karten</button></th>
+              <th class="tsg-th" data-field="cardsPerGame" data-fmt="d2" data-groups="cards" hidden><button type="button">Karten/Spiel</button></th>
+              <th class="tsg-th" data-field="minPerCard" data-fmt="int" data-groups="cards" hidden><button type="button">Min./Karte</button></th>
+              <th class="tsg-th" data-field="penTotal" data-fmt="int" data-groups="pens" hidden><button type="button">Elfmeter</button></th>
+              <th class="tsg-th" data-field="penHit" data-fmt="int" data-groups="pens" hidden><button type="button">Verwandelt</button></th>
+              <th class="tsg-th" data-field="penMiss" data-fmt="int" data-groups="pens" hidden><button type="button">Verschossen</button></th>
+              <th class="tsg-th" data-field="penRate" data-fmt="pct" data-groups="pens" hidden><button type="button">Quote</button></th>
+            </tr>
+          </thead>
+          <tbody class="tsg-clickrows" data-draw="spielertabelle"></tbody>
+        </table>
+      </div>
+      <p class="tsg-note tsg-none" hidden>Kein Spieler passt zur Suche.</p>
+    </div>
+  </section>
+
+  <!-- WECHSEL & WIRKUNG -->
+  <section class="tsg-stack tsg-panel" id="wechsel" role="tabpanel" aria-labelledby="tab-wechsel" hidden>
+    <p class="tsg-intro">Was passiert nach einem Wechsel? Für jede Ein- und Auswechslung vergleichen wir den Spielstand im Moment des Wechsels mit dem Endergebnis. „Punkte nach Einwechslung +2“ heißt zum Beispiel: Beim Wechsel stand es Remis, am Ende wurde gewonnen. Das geht nur für Spiele, in denen FuPa alle Torminuten kennt; die Wechselminute ergibt sich aus den Einsatzminuten (90 minus Minuten des Eingewechselten).</p>
+    <div class="tsg-kpis" data-source="spielerspiele">
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Einwechslungen</p><p class="tsg-kpi-num dash-skeleton" data-draw="wkpi" data-k="total">—</p><p class="tsg-kpi-sub" data-draw="wkpi" data-k="withData">—</p></div>
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Ø Einwechselminute</p><p class="tsg-kpi-num dash-skeleton" data-draw="wkpi" data-k="avgMin">—</p><p class="tsg-kpi-sub">aus den Einsatzminuten</p></div>
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Danach besser · gleich · schlechter</p><p class="tsg-kpi-num dash-skeleton" data-draw="wkpi" data-k="bsw">—</p><p class="tsg-kpi-sub">Ergebnis gegenüber dem Stand beim Wechsel</p></div>
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Punkte nach Einwechslungen</p><p class="tsg-kpi-num dash-skeleton" data-draw="wkpi" data-k="gain">—</p><p class="tsg-kpi-sub" data-draw="wkpi" data-k="gd">—</p></div>
+    </div>
+
+    <div class="tsg-grid2">
+      <div class="tsg-card" id="wechselzeitpunkt">
+        <h2>Wann wird eingewechselt?</h2>
+        <p class="tsg-note">Einwechslungen nach Spielminute.</p>
+        <div class="tsg-chart tsg-chart-sm dash-skeleton" data-draw="subhist" data-source="spielerspiele"></div>
+      </div>
+      <div class="tsg-card" id="wechselstand">
+        <div class="tsg-card-head">
+          <h2>Wirkung nach Spielstand</h2>
+          <select class="tsg-select tsg-state-kind" id="state-kind" aria-label="Ein- oder Auswechslungen">
+            <option value="in" selected>Einwechslungen</option>
+            <option value="out">Auswechslungen</option>
+          </select>
+        </div>
+        <p class="tsg-note">Wie oft das Ergebnis nach dem Wechsel noch besser oder schlechter wurde, je nach Spielstand beim Wechsel.</p>
+        <div class="tsg-tablewrap">
+          <table class="tsg-table" id="tbl-state" data-source="spielerspiele">
+            <thead><tr>
+              <th class="tsg-th" data-field="state" data-fmt="text"><button type="button">Stand beim Wechsel</button></th>
+              <th class="tsg-th" data-field="n" data-fmt="int"><button type="button">Wechsel</button></th>
+              <th class="tsg-th" data-field="better" data-fmt="int"><button type="button">besser</button></th>
+              <th class="tsg-th" data-field="same" data-fmt="int"><button type="button">gleich</button></th>
+              <th class="tsg-th" data-field="worse" data-fmt="int"><button type="button">schlechter</button></th>
+              <th class="tsg-th" data-field="avgGain" data-fmt="d2s"><button type="button">Ø Punkte</button></th>
+              <th class="tsg-th" data-field="avgGD" data-fmt="d2s"><button type="button">Ø Tordiff.</button></th>
+            </tr></thead>
+            <tbody data-draw="statetabelle"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="tsg-head">
+      <h2 class="tsg-section-title">Joker, Auswechslungen und Plus/Minus</h2>
+      <div class="tsg-grid3">
+        <div class="tsg-card">
+          <div class="tsg-card-head"><select class="tsg-select tsg-lead-metric" id="lead4-metric" aria-label="Kennzahl Liste Wirkung 1"><optgroup label="Wirkung"><option value="ppgWith" data-fmt="d2" data-rate="1" data-desc="Durchschnittliche Punkte der Mannschaft in Ligaspielen, in denen er gespielt hat.">Punkte pro Spiel mit ihm</option><option value="ppgDiff" data-fmt="d2s" data-rate="1" data-desc="Punkte pro Spiel mit ihm minus Punkte pro Spiel ohne ihn (Spiele seiner Mannschaften mit Aufstellung).">Punkte pro Spiel: mit minus ohne ihn</option><option value="winWith" data-fmt="pct" data-rate="1" data-desc="Anteil gewonnener Spiele, in denen er gespielt hat.">Siegquote mit ihm</option><option value="plusMinus" data-fmt="ints" data-need="pmGames" data-needmin="1" data-desc="Tore minus Gegentore, während er auf dem Platz stand. Nur Spiele, für die FuPa alle Torminuten hat.">Plus/Minus auf dem Platz</option><option value="pmPer90" data-fmt="d2s" data-rate="1" data-desc="Plus/Minus auf dem Platz hochgerechnet auf 90 Minuten.">Plus/Minus pro 90 Minuten</option><option value="inGain" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Einwechslung, in Punkten: + heißt, danach wurde es besser." selected>Punkte nach Einwechslung (Summe)</option><option value="inGainAvg" data-fmt="d2s" data-need="inN" data-needmin="5" data-desc="Wie oben, geteilt durch die Zahl seiner Einwechslungen mit Torminuten.">Ø Punkte-Veränderung pro Einwechslung (ab 5)</option><option value="inGD" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Einwechslung bis Spielende.">Tordifferenz nach Einwechslung</option><option value="inImproved" data-fmt="int" data-need="inN" data-needmin="1" data-desc="Einwechslungen, nach denen das Spiel mehr Punkte brachte als beim Wechsel.">Einwechslungen mit besserem Ergebnis</option><option value="outGain" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Auswechslung, in Punkten.">Punkte nach Auswechslung (Summe)</option><option value="outGD" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Auswechslung bis Spielende.">Tordifferenz nach Auswechslung</option></optgroup></select><select class="tsg-select tsg-lead-dir" id="lead4-dir" aria-label="Reihenfolge"><option value="best" selected>Beste zuerst</option><option value="worst">Schwächste zuerst</option></select></div>
+          <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="lead4-metric">—</p>
+          <ol class="tsg-lead dash-skeleton" data-draw="lead" data-source="spielerspiele"></ol>
+        </div>
+        <div class="tsg-card">
+          <div class="tsg-card-head"><select class="tsg-select tsg-lead-metric" id="lead5-metric" aria-label="Kennzahl Liste Wirkung 2"><optgroup label="Wirkung"><option value="ppgWith" data-fmt="d2" data-rate="1" data-desc="Durchschnittliche Punkte der Mannschaft in Ligaspielen, in denen er gespielt hat.">Punkte pro Spiel mit ihm</option><option value="ppgDiff" data-fmt="d2s" data-rate="1" data-desc="Punkte pro Spiel mit ihm minus Punkte pro Spiel ohne ihn (Spiele seiner Mannschaften mit Aufstellung).">Punkte pro Spiel: mit minus ohne ihn</option><option value="winWith" data-fmt="pct" data-rate="1" data-desc="Anteil gewonnener Spiele, in denen er gespielt hat.">Siegquote mit ihm</option><option value="plusMinus" data-fmt="ints" data-need="pmGames" data-needmin="1" data-desc="Tore minus Gegentore, während er auf dem Platz stand. Nur Spiele, für die FuPa alle Torminuten hat.">Plus/Minus auf dem Platz</option><option value="pmPer90" data-fmt="d2s" data-rate="1" data-desc="Plus/Minus auf dem Platz hochgerechnet auf 90 Minuten.">Plus/Minus pro 90 Minuten</option><option value="inGain" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Einwechslung, in Punkten: + heißt, danach wurde es besser.">Punkte nach Einwechslung (Summe)</option><option value="inGainAvg" data-fmt="d2s" data-need="inN" data-needmin="5" data-desc="Wie oben, geteilt durch die Zahl seiner Einwechslungen mit Torminuten.">Ø Punkte-Veränderung pro Einwechslung (ab 5)</option><option value="inGD" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Einwechslung bis Spielende.">Tordifferenz nach Einwechslung</option><option value="inImproved" data-fmt="int" data-need="inN" data-needmin="1" data-desc="Einwechslungen, nach denen das Spiel mehr Punkte brachte als beim Wechsel.">Einwechslungen mit besserem Ergebnis</option><option value="outGain" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Auswechslung, in Punkten." selected>Punkte nach Auswechslung (Summe)</option><option value="outGD" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Auswechslung bis Spielende.">Tordifferenz nach Auswechslung</option></optgroup></select><select class="tsg-select tsg-lead-dir" id="lead5-dir" aria-label="Reihenfolge"><option value="best" selected>Beste zuerst</option><option value="worst">Schwächste zuerst</option></select></div>
+          <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="lead5-metric">—</p>
+          <ol class="tsg-lead dash-skeleton" data-draw="lead" data-source="spielerspiele"></ol>
+        </div>
+        <div class="tsg-card">
+          <div class="tsg-card-head"><select class="tsg-select tsg-lead-metric" id="lead6-metric" aria-label="Kennzahl Liste Wirkung 3"><optgroup label="Wirkung"><option value="ppgWith" data-fmt="d2" data-rate="1" data-desc="Durchschnittliche Punkte der Mannschaft in Ligaspielen, in denen er gespielt hat.">Punkte pro Spiel mit ihm</option><option value="ppgDiff" data-fmt="d2s" data-rate="1" data-desc="Punkte pro Spiel mit ihm minus Punkte pro Spiel ohne ihn (Spiele seiner Mannschaften mit Aufstellung).">Punkte pro Spiel: mit minus ohne ihn</option><option value="winWith" data-fmt="pct" data-rate="1" data-desc="Anteil gewonnener Spiele, in denen er gespielt hat.">Siegquote mit ihm</option><option value="plusMinus" data-fmt="ints" data-need="pmGames" data-needmin="1" data-desc="Tore minus Gegentore, während er auf dem Platz stand. Nur Spiele, für die FuPa alle Torminuten hat.">Plus/Minus auf dem Platz</option><option value="pmPer90" data-fmt="d2s" data-rate="1" data-desc="Plus/Minus auf dem Platz hochgerechnet auf 90 Minuten." selected>Plus/Minus pro 90 Minuten</option><option value="inGain" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Einwechslung, in Punkten: + heißt, danach wurde es besser.">Punkte nach Einwechslung (Summe)</option><option value="inGainAvg" data-fmt="d2s" data-need="inN" data-needmin="5" data-desc="Wie oben, geteilt durch die Zahl seiner Einwechslungen mit Torminuten.">Ø Punkte-Veränderung pro Einwechslung (ab 5)</option><option value="inGD" data-fmt="ints" data-need="inN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Einwechslung bis Spielende.">Tordifferenz nach Einwechslung</option><option value="inImproved" data-fmt="int" data-need="inN" data-needmin="1" data-desc="Einwechslungen, nach denen das Spiel mehr Punkte brachte als beim Wechsel.">Einwechslungen mit besserem Ergebnis</option><option value="outGain" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Endergebnis gegenüber dem Spielstand bei seiner Auswechslung, in Punkten.">Punkte nach Auswechslung (Summe)</option><option value="outGD" data-fmt="ints" data-need="outN" data-needmin="1" data-desc="Tore minus Gegentore ab seiner Auswechslung bis Spielende.">Tordifferenz nach Auswechslung</option></optgroup></select><select class="tsg-select tsg-lead-dir" id="lead6-dir" aria-label="Reihenfolge"><option value="best" selected>Beste zuerst</option><option value="worst">Schwächste zuerst</option></select></div>
+          <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="lead6-metric">—</p>
+          <ol class="tsg-lead dash-skeleton" data-draw="lead" data-source="spielerspiele"></ol>
+        </div>
+      </div>
+    </div>
+
+    <div class="tsg-card" id="mit-ohne">
+      <h2>Mit wem punkten wir?</h2>
+      <p class="tsg-note">Punkte pro Spiel und Siegquote in Ligaspielen mit und ohne den Spieler. „Ohne“ zählt Spiele seiner Mannschaften mit Aufstellung, in denen er nicht gespielt hat. Es zählen Spieler mit der oben gewählten Mindestzahl an Einsätzen.</p>
+      <div class="tsg-tablewrap">
+        <table class="tsg-table" id="tbl-mitohne" data-source="spielerspiele spiele">
+          <thead><tr>
+            <th class="tsg-th" data-field="name" data-fmt="text"><button type="button">Spieler</button></th>
+            <th class="tsg-th" data-field="matches" data-fmt="int"><button type="button">Spiele mit</button></th>
+            <th class="tsg-th" data-field="gamesWithout" data-fmt="int"><button type="button">Spiele ohne</button></th>
+            <th class="tsg-th" data-field="ppgWith" data-fmt="d2"><button type="button">Pkt./Sp. mit</button></th>
+            <th class="tsg-th" data-field="ppgWithout" data-fmt="d2"><button type="button">Pkt./Sp. ohne</button></th>
+            <th class="tsg-th" data-field="ppgDiff" data-fmt="d2s" aria-sort="descending"><button type="button">Differenz</button></th>
+            <th class="tsg-th" data-field="winWith" data-fmt="pct"><button type="button">Siegquote mit</button></th>
+            <th class="tsg-th" data-field="winWithout" data-fmt="pct"><button type="button">Siegquote ohne</button></th>
+          </tr></thead>
+          <tbody class="tsg-clickrows" data-draw="mitohnetabelle"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- KADER -->
+  <section class="tsg-stack tsg-panel" id="kader" role="tabpanel" aria-labelledby="tab-kader" hidden>
+    <div class="tsg-card" id="kaderentwicklung">
+      <div class="tsg-card-head">
+        <h2>Kaderentwicklung</h2>
+        <select class="tsg-select tsg-kader-view" id="kader-view" aria-label="Ansicht Kaderentwicklung">
+          <option value="stamm" selected>Stamm und Ergänzung</option>
+          <option value="wechsel">Neue Spieler und Abgänge</option>
+        </select>
+      </div>
+      <p class="tsg-note">Stamm = mindestens 10 Einsätze in der Saison. Neu = erste Saison mit Einsatz in den gewählten Mannschaften, Abgang = letzte Saison mit Einsatz (gezählt über alle Saisons, nicht nur den Zeitraum).</p>
+      <div class="tsg-legend" data-draw="kaderlegend"></div>
+      <div class="tsg-chart dash-skeleton" id="chart-kader" data-draw="kaderchart" data-source="spielerspiele"></div>
+    </div>
+    <div class="tsg-grid2">
+      <div class="tsg-card" id="durchlaessigkeit">
+        <h2>Durchlässigkeit 1. Mannschaft ↔ II</h2>
+        <p class="tsg-note">Gilt immer für beide Mannschaften im gewählten Zeitraum.</p>
+        <div class="tsg-legend"><span><i class="tsg-sw" data-sw="mix"></i>In beiden Teams eingesetzt</span><span><i class="tsg-sw" data-sw="up"></i>Erstmals in der 1., vorher in der II</span></div>
+        <div class="tsg-chart dash-skeleton" data-draw="durchchart" data-source="spielerspiele"></div>
+      </div>
+      <div class="tsg-card" id="treue">
+        <div class="tsg-card-head">
+          <h2>Treue und Konstanz</h2>
+          <select class="tsg-select tsg-lead-metric" id="lead7-metric" aria-label="Kennzahl Treue">
+            <option value="maxStreak" data-fmt="int" data-desc="Die meisten aufeinanderfolgenden Saisons mit Einsatz." selected>Längste Serie (Saisons am Stück)</option>
+            <option value="seasons" data-fmt="int" data-desc="In wie vielen Saisons er mindestens einmal gespielt hat.">Saisons mit Einsatz</option>
+            <option value="matches" data-fmt="int" data-desc="Ligaspiele mit Einsatz.">Einsätze</option>
+          </select>
+          <select class="tsg-select tsg-lead-dir" id="lead7-dir" aria-label="Reihenfolge" hidden><option value="best" selected>Beste zuerst</option></select>
+        </div>
+        <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="lead7-metric">—</p>
+        <ol class="tsg-lead dash-skeleton" data-draw="lead" data-source="spielerspiele"></ol>
+      </div>
+    </div>
+    <div class="tsg-card" id="beide-teams">
+      <h2>Spieler in beiden Mannschaften</h2>
+      <p class="tsg-note">„II → 1.“: zuerst in der II (bzw. Reserve) eingesetzt, „1. → II“: zuerst in der 1. Mannschaft, „gleichzeitig“: in derselben Saison begonnen.</p>
+      <div class="tsg-tablewrap">
+        <table class="tsg-table" id="tbl-beide" data-source="spielerspiele">
+          <thead><tr>
+            <th class="tsg-th" data-field="name" data-fmt="text"><button type="button">Spieler</button></th>
+            <th class="tsg-th tsg-l" data-field="path" data-fmt="text"><button type="button">Weg</button></th>
+            <th class="tsg-th" data-field="firstII" data-fmt="text"><button type="button">Erste Saison II</button></th>
+            <th class="tsg-th" data-field="firstM1" data-fmt="text"><button type="button">Erste Saison 1.</button></th>
+            <th class="tsg-th" data-field="iiBefore" data-fmt="int"><button type="button">II-Einsätze davor</button></th>
+            <th class="tsg-th" data-field="matchesII" data-fmt="int"><button type="button">Einsätze II</button></th>
+            <th class="tsg-th" data-field="matchesM1" data-fmt="int" aria-sort="descending"><button type="button">Einsätze 1.</button></th>
+            <th class="tsg-th" data-field="seasonsBoth" data-fmt="int"><button type="button">Saisons in beiden</button></th>
+          </tr></thead>
+          <tbody class="tsg-clickrows" data-draw="beidetabelle"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- MANNSCHAFT -->
+  <section class="tsg-stack tsg-panel" id="mannschaft" role="tabpanel" aria-labelledby="tab-mannschaft" hidden>
+    <p class="tsg-intro">Bilanz und Platzierungen aus den FuPa-Ligatabellen (1. Mannschaft ab 07/08, Reserve ab 08/09). Heim/Auswärts, Rekordspiele und Gegner aus den einzelnen Ligaspielen, ohne Wertungen am grünen Tisch.</p>
+    <div class="tsg-kpis" data-source="tabellen">
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Ligaspiele laut Tabelle</p><p class="tsg-kpi-num dash-skeleton" data-draw="bkpi" data-k="matches">—</p><p class="tsg-kpi-sub" data-draw="bkpi" data-k="seasons">—</p></div>
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Siege · Unentschieden · Niederlagen</p><p class="tsg-kpi-num dash-skeleton" data-draw="bkpi" data-k="sun">—</p><p class="tsg-kpi-sub" data-draw="bkpi" data-k="winRate">—</p></div>
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Punkte pro Spiel</p><p class="tsg-kpi-num dash-skeleton" data-draw="bkpi" data-k="ppg">—</p><p class="tsg-kpi-sub" data-draw="bkpi" data-k="points">—</p></div>
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Tore : Gegentore</p><p class="tsg-kpi-num dash-skeleton" data-draw="bkpi" data-k="goals">—</p><p class="tsg-kpi-sub" data-draw="bkpi" data-k="gpg">—</p></div>
+      <div class="tsg-kpi"><p class="tsg-kpi-label">Meisterschaften</p><p class="tsg-kpi-num dash-skeleton" data-draw="bkpi" data-k="titles">—</p><p class="tsg-kpi-sub" data-draw="bkpi" data-k="avgRank">—</p></div>
+    </div>
+    <div class="tsg-card" id="platzierungen">
+      <h2>Platzierungen</h2>
+      <p class="tsg-note">Tabellenplatz am Saisonende (laufende Saison: aktueller Stand). Oben ist Platz 1.</p>
+      <div class="tsg-legend" data-draw="legend" data-source="tabellen"></div>
+      <div class="tsg-chart dash-skeleton" data-draw="platzchart" data-source="tabellen"></div>
+    </div>
+    <div class="tsg-card" id="saisontabelle">
+      <h2>Alle Saisons</h2>
+      <div class="tsg-tablewrap tsg-tablewrap-sm">
+        <table class="tsg-table" id="tbl-tabellen" data-source="tabellen" data-row-key="season,teamId">
+          <thead><tr>
+            <th class="tsg-th" data-field="season" data-fmt="text" aria-sort="descending"><button type="button">Saison</button></th>
+            <th class="tsg-th tsg-l" data-field="team" data-fmt="text"><button type="button">Team</button></th>
+            <th class="tsg-th tsg-l" data-field="league" data-fmt="text"><button type="button">Liga</button></th>
+            <th class="tsg-th" data-field="rank" data-fmt="int"><button type="button">Platz</button></th>
+            <th class="tsg-th" data-field="teams" data-fmt="int"><button type="button">Teams</button></th>
+            <th class="tsg-th" data-field="matches" data-fmt="int"><button type="button">Sp.</button></th>
+            <th class="tsg-th" data-field="wins" data-fmt="int"><button type="button">S</button></th>
+            <th class="tsg-th" data-field="draws" data-fmt="int"><button type="button">U</button></th>
+            <th class="tsg-th" data-field="defeats" data-fmt="int"><button type="button">N</button></th>
+            <th class="tsg-th" data-field="goalsFor" data-fmt="int"><button type="button">Tore</button></th>
+            <th class="tsg-th" data-field="goalsAgainst" data-fmt="int"><button type="button">Gegentore</button></th>
+            <th class="tsg-th" data-field="points" data-fmt="int"><button type="button">Punkte</button></th>
+          </tr></thead>
+          <tbody data-draw="tabellentabelle"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tsg-grid3">
+      <div class="tsg-card" id="heim-auswaerts">
+        <h2>Heim und Auswärts</h2>
+        <div class="tsg-tablewrap">
+          <table class="tsg-table" id="tbl-heim" data-source="spiele">
+            <thead><tr>
+              <th class="tsg-th" data-field="venue" data-fmt="text"><button type="button">Ort</button></th>
+              <th class="tsg-th" data-field="matches" data-fmt="int"><button type="button">Sp.</button></th>
+              <th class="tsg-th" data-field="wins" data-fmt="int"><button type="button">S</button></th>
+              <th class="tsg-th" data-field="draws" data-fmt="int"><button type="button">U</button></th>
+              <th class="tsg-th" data-field="defeats" data-fmt="int"><button type="button">N</button></th>
+              <th class="tsg-th" data-field="ppg" data-fmt="d2" aria-sort="descending"><button type="button">Pkt./Sp.</button></th>
+            </tr></thead>
+            <tbody data-draw="heimtabelle"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tsg-card" id="hoechste-siege">
+        <h2>Höchste Siege</h2>
+        <ol class="tsg-matchlist dash-skeleton" data-draw="spielliste" data-kind="S" data-source="spiele"></ol>
+      </div>
+      <div class="tsg-card" id="hoechste-niederlagen">
+        <h2>Höchste Niederlagen</h2>
+        <ol class="tsg-matchlist dash-skeleton" data-draw="spielliste" data-kind="N" data-source="spiele"></ol>
+      </div>
+    </div>
+    <div class="tsg-card" id="gegner">
+      <div class="tsg-tools">
+        <h2>Bilanz gegen Gegner</h2>
+        <input class="tsg-search" id="gegnersuche" type="search" placeholder="Gegner suchen" aria-label="Gegner suchen">
+      </div>
+      <div class="tsg-tablewrap">
+        <table class="tsg-table" id="tbl-gegner" data-source="spiele">
+          <thead><tr>
+            <th class="tsg-th" data-field="opponent" data-fmt="text"><button type="button">Gegner</button></th>
+            <th class="tsg-th" data-field="matches" data-fmt="int" aria-sort="descending"><button type="button">Sp.</button></th>
+            <th class="tsg-th" data-field="wins" data-fmt="int"><button type="button">S</button></th>
+            <th class="tsg-th" data-field="draws" data-fmt="int"><button type="button">U</button></th>
+            <th class="tsg-th" data-field="defeats" data-fmt="int"><button type="button">N</button></th>
+            <th class="tsg-th" data-field="goalsFor" data-fmt="int"><button type="button">Tore</button></th>
+            <th class="tsg-th" data-field="goalsAgainst" data-fmt="int"><button type="button">Gegentore</button></th>
+            <th class="tsg-th" data-field="ppg" data-fmt="d2"><button type="button">Pkt./Sp.</button></th>
+          </tr></thead>
+          <tbody data-draw="gegnertabelle"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- REKORDE -->
+  <section class="tsg-stack tsg-panel" id="rekorde" role="tabpanel" aria-labelledby="tab-rekorde" hidden>
+    <div class="tsg-card" id="meilensteine">
+      <div class="tsg-card-head">
+        <h2>Meilensteine</h2>
+        <select class="tsg-select tsg-ms-cat" id="ms-cat" aria-label="Kategorie der Meilensteine">
+          <option value="all" selected>Alle Kategorien</option>
+          <option value="matches">Einsätze</option>
+          <option value="goals">Tore</option>
+          <option value="assists">Vorlagen</option>
+          <option value="points">Scorerpunkte</option>
+          <option value="minutes">Spielminuten</option>
+        </select>
+      </div>
+      <p class="tsg-note">Karrierewerte in den gewählten Mannschaften über alle Saisons (der Zeitraum-Filter gilt hier nicht). Marken: Einsätze 25, 50, 100, 150 …; Tore und Vorlagen 10, 25, 50, 75, 100 …; Scorerpunkte 25, 50, 100 …; Spielminuten 1.000, 2.500, 5.000, 7.500, 10.000 ….</p>
+      <div class="tsg-grid2">
+        <div class="tsg-head">
+          <h3>Zuletzt erreicht</h3>
+          <ol class="tsg-lead tsg-lead-wide dash-skeleton" id="ms-recent" data-draw="msrecent" data-source="spielerspiele spiele"></ol>
+        </div>
+        <div class="tsg-head">
+          <h3>Voraussichtlich als Nächstes</h3>
+          <p class="tsg-note">Spieler mit Einsatz in der aktuellen Saison. Die Prognose rechnet mit seinem Schnitt aus den letzten 20 Einsätzen.</p>
+          <ol class="tsg-lead tsg-lead-wide dash-skeleton" id="ms-next" data-draw="msnext" data-source="spielerspiele"></ol>
+        </div>
+      </div>
+    </div>
+    <div class="tsg-grid2">
+      <div class="tsg-card" id="einzelsaisons">
+        <div class="tsg-card-head">
+          <h2>Beste Einzelsaisons</h2>
+          <select class="tsg-select tsg-best-metric" id="best-metric" aria-label="Kennzahl der besten Einzelsaisons">
+            <option value="goals" data-fmt="int" selected>Tore</option>
+            <option value="assists" data-fmt="int">Vorlagen</option>
+            <option value="points" data-fmt="int">Scorerpunkte</option>
+            <option value="matches" data-fmt="int">Einsätze</option>
+            <option value="minutes" data-fmt="int">Spielminuten</option>
+            <option value="full" data-fmt="int">Durchgespielt</option>
+            <option value="plusMinus" data-fmt="ints">Plus/Minus auf dem Platz</option>
+            <option value="cards" data-fmt="int">Karten</option>
+            <option value="minPerGoal" data-fmt="int" data-low="1" data-rate="1">Minuten pro Tor (ab 10 Einsätzen)</option>
+            <option value="minPerPoint" data-fmt="int" data-low="1" data-rate="1">Minuten pro Scorerpunkt (ab 10 Einsätzen)</option>
+          </select>
+        </div>
+        <p class="tsg-note">Eine Zeile je Spieler, Saison und Mannschaft.</p>
+        <ol class="tsg-lead dash-skeleton" data-draw="bestseason" data-source="spielerspiele"></ol>
+      </div>
+    </div>
+    <div class="tsg-card" id="torjaeger">
+      <div class="tsg-card-head">
+        <h2>Abhängigkeit von den Torjägern</h2>
+        <select class="tsg-select tsg-tj-metric" id="tj-metric" aria-label="Kennzahl Torjäger">
+          <option value="top3Share" data-fmt="pct" selected>Anteil der Top-3-Torschützen an allen Toren</option>
+          <option value="topShare" data-fmt="pct">Anteil des besten Torschützen</option>
+          <option value="scorers" data-fmt="int">Anzahl verschiedener Torschützen</option>
+        </select>
+      </div>
+      <p class="tsg-note">Je Saison. Ein hoher Anteil heißt: Die Tore hängen an wenigen Spielern.</p>
+      <div class="tsg-chart dash-skeleton" data-draw="tjchart" data-source="spielerspiele"></div>
+    </div>
+  </section>
+
+  <!-- FAKTEN -->
+  <section class="tsg-stack tsg-panel" id="fakten" role="tabpanel" aria-labelledby="tab-fakten" hidden>
+    <p class="tsg-intro">Allgemeine und kuriose Werte zu den Spielern in der Auswahl (Mannschaft und Zeitraum). Klick auf einen Namen öffnet das Profil.</p>
+    <div class="tsg-grid3">
+      <div class="tsg-card" id="fakt-noGoal">
+        <h3>Meiste Einsätze ohne Tor</h3>
+        <p class="tsg-note">Spieler, die in der Auswahl noch kein Ligator erzielt haben.</p>
+        <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="noGoal" data-source="spielerspiele spiele">—</p>
+        <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="noGoal" data-source="spielerspiele spiele"></ol>
+      </div>
+      <div class="tsg-card" id="fakt-noCard">
+        <h3>Nie verwarnt</h3>
+        <p class="tsg-note">Meiste Einsätze ohne Gelbe, Gelb-Rote oder Rote Karte.</p>
+        <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="noCard" data-source="spielerspiele spiele">—</p>
+        <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="noCard" data-source="spielerspiele spiele"></ol>
+      </div>
+      <div class="tsg-card" id="fakt-appStreak">
+        <h3>Meiste Spiele in Folge</h3>
+        <p class="tsg-note">Ligaspiele seiner Mannschaft am Stück mit Einsatz (nur Spiele mit Aufstellung).</p>
+        <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="appStreak" data-source="spielerspiele spiele">—</p>
+        <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="appStreak" data-source="spielerspiele spiele"></ol>
+      </div>
+      <div class="tsg-card" id="fakt-unbeaten">
+        <h3>Ungeschlagen in Folge</h3>
+        <p class="tsg-note">Eigene Einsätze am Stück ohne Niederlage.</p>
+        <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="unbeaten" data-source="spielerspiele spiele">—</p>
+        <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="unbeaten" data-source="spielerspiele spiele"></ol>
+      </div>
+      <div class="tsg-card" id="fakt-goalStreak">
+        <h3>Längste Torserie</h3>
+        <p class="tsg-note">Eigene Einsätze am Stück mit mindestens einem Tor.</p>
+        <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="goalStreak" data-source="spielerspiele spiele">—</p>
+        <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="goalStreak" data-source="spielerspiele spiele"></ol>
+      </div>
+      <div class="tsg-card" id="fakt-drought">
+        <h3>Längste Durststrecke</h3>
+        <p class="tsg-note">Eigene Einsätze am Stück ohne Tor, nur Spieler mit mindestens einem Tor.</p>
+        <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="drought" data-source="spielerspiele spiele">—</p>
+        <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="drought" data-source="spielerspiele spiele"></ol>
+      </div>
+      <div class="tsg-card" id="fakt-superSub">
+        <h3>Joker-Tore</h3>
+        <p class="tsg-note">Tore nach Einwechslung.</p>
+        <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="superSub" data-source="spielerspiele spiele">—</p>
+        <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="superSub" data-source="spielerspiele spiele"></ol>
+      </div>
+      <div class="tsg-card" id="fakt-multi">
+        <h3>Mehrfach getroffen</h3>
+        <p class="tsg-note">Spiele mit mindestens zwei eigenen Toren.</p>
+        <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="multi" data-source="spielerspiele spiele">—</p>
+        <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="multi" data-source="spielerspiele spiele"></ol>
+      </div>
+      <div class="tsg-card" id="fakt-debutGoal">
+        <h3>Tor beim Debüt</h3>
+        <p class="tsg-note">Spieler, die gleich in ihrem ersten erfassten Einsatz getroffen haben.</p>
+        <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="debutGoal" data-source="spielerspiele spiele">—</p>
+        <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="debutGoal" data-source="spielerspiele spiele"></ol>
+      </div>
+      <div class="tsg-card" id="fakt-oneTimers">
+        <h3>Einmal dabei</h3>
+        <p class="tsg-note">Spieler mit genau einem Einsatz in den gewählten Mannschaften.</p>
+        <p class="tsg-note tsg-fsum" data-draw="factsum" data-fact="oneTimers" data-source="spielerspiele spiele">—</p>
+        <ol class="tsg-lead tsg-lead-short dash-skeleton" data-draw="fact" data-fact="oneTimers" data-source="spielerspiele spiele"></ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- DATENQUALITÄT -->
+  <section class="tsg-stack tsg-panel" id="daten" role="tabpanel" aria-labelledby="tab-daten" hidden>
+    <p class="tsg-intro">Wie vollständig sind die FuPa-Daten? Je vollständiger die Aufstellungen und Torminuten, desto genauer werden Spielerwerte, Minuten und die Wechsel-Auswertung. Die Liste unten zeigt, wo noch etwas fehlt, mit Link zum Spiel auf FuPa.</p>
+    <div class="tsg-card" id="abdeckung">
+      <h2>Abdeckung je Saison</h2>
+      <div class="tsg-tablewrap tsg-tablewrap-sm">
+        <table class="tsg-table" id="tbl-abdeckung" data-source="spiele">
+          <thead><tr>
+            <th class="tsg-th" data-field="season" data-fmt="text" aria-sort="descending"><button type="button">Saison</button></th>
+            <th class="tsg-th tsg-l" data-field="team" data-fmt="text"><button type="button">Team</button></th>
+            <th class="tsg-th" data-field="games" data-fmt="int"><button type="button">Ligaspiele</button></th>
+            <th class="tsg-th" data-field="full" data-fmt="int"><button type="button">Aufstellung komplett</button></th>
+            <th class="tsg-th" data-field="partial" data-fmt="int"><button type="button">unvollständig</button></th>
+            <th class="tsg-th" data-field="none" data-fmt="int"><button type="button">keine</button></th>
+            <th class="tsg-th" data-field="goalsOk" data-fmt="int"><button type="button">Torminuten komplett</button></th>
+            <th class="tsg-th" data-field="share" data-fmt="pct"><button type="button">Anteil komplett</button></th>
+          </tr></thead>
+          <tbody data-draw="abdeckung"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tsg-card" id="abweichungen">
+      <h2>Abweichungen zur FuPa-Spielerstatistik</h2>
+      <p class="tsg-note">Spieler-Saisons, in denen die Summe aus den Aufstellungen nicht zur Saisonstatistik auf der FuPa-Teamseite passt. Meist fehlt ein Tor oder Einsatz in einer einzelnen Spiel-Aufstellung.</p>
+      <div class="tsg-tablewrap tsg-tablewrap-sm">
+        <table class="tsg-table" id="tbl-abw" data-source="spielerspiele saisons">
+          <thead><tr>
+            <th class="tsg-th" data-field="name" data-fmt="text"><button type="button">Spieler</button></th>
+            <th class="tsg-th" data-field="season" data-fmt="text" aria-sort="descending"><button type="button">Saison</button></th>
+            <th class="tsg-th tsg-l" data-field="team" data-fmt="text"><button type="button">Team</button></th>
+            <th class="tsg-th" data-field="mA" data-fmt="int"><button type="button">Einsätze Aufst.</button></th>
+            <th class="tsg-th" data-field="mF" data-fmt="int"><button type="button">Einsätze FuPa</button></th>
+            <th class="tsg-th" data-field="gA" data-fmt="int"><button type="button">Tore Aufst.</button></th>
+            <th class="tsg-th" data-field="gF" data-fmt="int"><button type="button">Tore FuPa</button></th>
+            <th class="tsg-th" data-field="minA" data-fmt="int"><button type="button">Min. Aufst.</button></th>
+            <th class="tsg-th" data-field="minF" data-fmt="int"><button type="button">Min. FuPa</button></th>
+          </tr></thead>
+          <tbody class="tsg-clickrows" data-draw="abweichung"></tbody>
+        </table>
+      </div>
+      <p class="tsg-note tsg-abw-none" hidden>Keine Abweichungen in dieser Auswahl.</p>
+    </div>
+    <div class="tsg-card" id="fehlend">
+      <div class="tsg-card-head">
+        <h2>Spiele zum Nachtragen</h2>
+        <select class="tsg-select tsg-missing" id="missing-kind" aria-label="Was fehlt">
+          <option value="lineup" selected>Keine Aufstellung</option>
+          <option value="partial">Aufstellung unvollständig (weniger als 11 in der Startelf)</option>
+          <option value="goals">Torminuten fehlen</option>
+        </select>
+      </div>
+      <ol class="tsg-matchlist tsg-fehl dash-skeleton" data-draw="fehlliste" data-source="spiele"></ol>
+    </div>
+  </section>
+
+  <footer class="tsg-foot">
+    <details class="tsg-glossary">
+      <summary>Begriffe und Berechnung</summary>
+      <dl class="tsg-dl">
+        <dt>Einsatz</dt><dd>Ligaspiel, in dem der Spieler in der Startelf stand oder eingewechselt wurde (laut FuPa-Aufstellung). Test-, Pokal- und Hallenspiele zählen nicht.</dd>
+        <dt>Durchgespielt</dt><dd>Startelf und weder ausgewechselt noch vom Platz gestellt.</dd>
+        <dt>Spielzeit-Quote</dt><dd>Minuten geteilt durch Einsätze × 90.</dd>
+        <dt>Plus/Minus</dt><dd>Tore minus Gegentore, während der Spieler auf dem Platz stand. Nur Spiele, in denen FuPa alle Torminuten kennt.</dd>
+        <dt>Punkte nach Ein-/Auswechslung</dt><dd>Punkte am Spielende minus die Punkte, die der Spielstand im Moment des Wechsels gebracht hätte. +2 = aus Remis wurde ein Sieg, −1 = aus Remis wurde eine Niederlage.</dd>
+        <dt>Wechselminute</dt><dd>Eingewechselt: 90 minus Einsatzminuten. Ausgewechselt: Einsatzminuten. Wer im selben Spiel ein- und ausgewechselt wurde, fehlt in der Wechsel-Auswertung.</dd>
+        <dt>Mit / ohne ihn</dt><dd>Punkte pro Spiel in Ligaspielen mit seinem Einsatz gegenüber Spielen seiner Mannschaften mit Aufstellung, in denen er nicht spielte.</dd>
+        <dt>II</dt><dd>Reserve (bis 22/23) und II (ab 23/24) sind eine Mannschaft.</dd>
+        <dt>Spieler</dt><dd>Über den Namen zusammengeführt (Louis Taxis hat bei FuPa zwei Profile).</dd>
+      </dl>
+    </details>
+    <p class="tsg-note">Quelle: FuPa – Aufstellungen, Spiele, Torereignisse und Ligatabellen der Teams tsgv-rechberg-m1 (1. Mannschaft), tsgv-rechberg-mr1 (Reserve) und tsgv-rechberg-mr2 (II).</p>
+  </footer>
+</div>
+<script src="calcs.js"></script>
+<script src="core.js"></script>
+<script src="views.js"></script>
+
+</main>
+<footer class="site-foot"><span id="datenstand">Datenstand: –</span><span>Daten: <a href="https://www.fupa.net/club/tsgv-rechberg" target="_blank" rel="noopener">FuPa</a></span></footer>
+</body>
+</html>

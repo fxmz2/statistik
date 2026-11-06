@@ -1,0 +1,88 @@
+/* Grundgestaltung der eigenständigen Version: Farben, Schrift, Abstände (hell und dunkel) */
+:root {
+  --font-anthropic-sans: "Source Sans 3", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-anthropic-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --cds-font-size-caption: 0.8125rem;
+  --cds-font-size-body: 0.9375rem;
+  --cds-font-size-heading: 1.0625rem;
+  --cds-font-size-title: 1.5rem;
+  --cds-font-weight-medium: 600;
+  --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 12px; --cds-gap-lg: 20px; --cds-gap-xl: 32px;
+  --cds-pad-xs: 4px; --cds-pad-sm: 8px; --cds-pad-md: 12px; --cds-pad-lg: 18px; --cds-pad-xl: 28px;
+  --cds-radius: 8px;
+  --cds-dur-slow: 240ms;
+  --cds-ease-out: cubic-bezier(.2, .7, .2, 1);
+
+  --color-bg: #f5f6f8;
+  --color-panel: #ffffff;
+  --color-fg: #18202b;
+  --color-fg-muted: #5b6573;
+  --color-border-line: #dde1e7;
+  --color-ok: #1d7a46;
+  --color-warn: #a86400;
+  --color-bad: #c23a2b;
+  --cds-surface-popover: #ffffff;
+  --cds-border: #d3d8df;
+  --cds-text-secondary: #5b6573;
+  --cds-shadow-popover: 0 4px 16px rgba(24, 32, 43, .12);
+  --cds-chart-muted: #c3c9d2;
+  --cds-chart-grid: #e8ebef;
+  --cds-chart-axis: #b4bbc5;
+  --cds-chart-reference: #8a93a0;
+  --skeleton: #e6e9ee;
+
+  --series-1: #1f4e8c; /* 1. Mannschaft: Vereinsblau */
+  --series-2: #d9622b; /* II */
+  --series-3: #6b7c93;
+  --series-4: #2e9b6f;
+  --series-5: #3a86c8;
+  --series-6: #b5484b;
+  --series-7: #8d6cc2;
+  --series-8: #b9932e;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0f1218;
+    --color-panel: #181c24;
+    --color-fg: #e9edf2;
+    --color-fg-muted: #9aa4b2;
+    --color-border-line: #2a303b;
+    --color-ok: #4cc283;
+    --color-warn: #e0a24a;
+    --color-bad: #ef6b5d;
+    --cds-surface-popover: #212733;
+    --cds-border: #353c49;
+    --cds-text-secondary: #9aa4b2;
+    --cds-shadow-popover: 0 4px 16px rgba(0, 0, 0, .45);
+    --cds-chart-muted: #4a5260;
+    --cds-chart-grid: #252b35;
+    --cds-chart-axis: #4a5260;
+    --cds-chart-reference: #7d8796;
+    --skeleton: #262c37;
+    --series-1: #6c9fe0;
+    --series-2: #f0844f;
+    --series-3: #93a1b5;
+    --series-4: #4fc394;
+    --series-5: #74b3ea;
+    --series-6: #e07b7d;
+    --series-7: #b39ae6;
+    --series-8: #d9b85a;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--color-bg); color: var(--color-fg);
+  font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-body); line-height: 1.4;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));
+}
+@media (min-width: 900px) { body { padding-inline: 32px; } }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+.dash-skeleton { color: transparent !important; position: relative; }
+.dash-skeleton::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: min(8rem, 70%); height: .9em; border-radius: 6px; background: var(--skeleton); }
+.tsg-chart.dash-skeleton::before, .tsg-lead.dash-skeleton::before, .tsg-matchlist.dash-skeleton::before { inset: 0; transform: none; width: auto; height: auto; top: 0; }
+.site-foot { max-width: 82rem; margin: 24px auto 0; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.site-foot a { color: inherit; }
