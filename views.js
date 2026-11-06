@@ -843,9 +843,11 @@
     const mates = new Map(), pairs = new Map(), opp = new Map();
     const mate = (n) => { if (!mates.has(n)) mates.set(n, {name: n, games: 0, wins: 0, draws: 0, defeats: 0, pts: 0, bothScored: 0}); return mates.get(n); };
     const pair = (n) => { if (!pairs.has(n)) pairs.set(n, {name: n, gaveSure: 0, gotSure: 0, gavePossible: 0, gotPossible: 0}); return pairs.get(n); };
-    for (const me of T.pm().filter((r) => r.name === name)) {
+    const mine = new Map();
+    for (const r of T.pm()) if (r.name === name && !mine.has(r.matchId)) mine.set(r.matchId, r);
+    for (const me of mine.values()) {
       const s = mm.get(me.matchId);
-      const rows = bym.get(me.matchId) || [];
+      const rows = [...new Map((bym.get(me.matchId) || []).map((r) => [r.name, r])).values()];
       const others = rows.filter((r) => r.name !== name);
       for (const o of others) {
         const m = mate(o.name);

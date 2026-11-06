@@ -1,7 +1,7 @@
 // Einsätze je Ligaspiel aus den FuPa-Aufstellungen, angereichert mit Spiel- und Torminuten-Daten
 dash.calc('spielerspiele', {
   title: 'Einsätze je Ligaspiel',
-  description: 'Jeder Einsatz in einem Ligaspiel aus den FuPa-Aufstellungen, mit Saison, Mannschaft und Ergebnis. Wo FuPa alle Torminuten hat (und das Spiel nicht am grünen Tisch gewertet wurde) zusätzlich: Tore für und gegen, während der Spieler auf dem Platz stand, und die Veränderung von Spielstand und Punkten nach seiner Ein- oder Auswechslung. Wechselminute = 90 minus Einsatzminuten.',
+  description: 'Jeder Einsatz in einem Ligaspiel aus den FuPa-Aufstellungen (je Spieler und Spiel einmal), mit Saison, Mannschaft und Ergebnis. Wo FuPa alle Torminuten hat (und das Spiel nicht am grünen Tisch gewertet wurde) zusätzlich: Tore für und gegen, während der Spieler auf dem Platz stand, und die Veränderung von Spielstand und Punkten nach seiner Ein- oder Auswechslung. Wechselminute = 90 minus Einsatzminuten.',
   inputs: ['spiele', 'aufstellungen', 'tore'],
   fn: (spiele, aufstellungen, tore) => {
     const games = new Map(spiele.filter((s) => s.category === 'league').map((s) => [s.matchId, s]));
@@ -18,9 +18,14 @@ dash.calc('spielerspiele', {
     };
     const state = (f, a) => (f > a ? 'Führung' : f === a ? 'Remis' : 'Rückstand');
     const out = [];
+    const seen = new Set();
     for (const a of aufstellungen) {
       const s = games.get(a.matchId);
       if (!s) continue;
+      // Jeder Spieler zählt pro Spiel nur einmal (doppelte Einträge, z. B. zwei FuPa-Profile, werden ignoriert)
+      const key = a.matchId + '|' + a.name;
+      if (seen.has(key)) continue;
+      seen.add(key);
       const n = (k) => Number(a[k]) || 0;
       const start = n('start') > 0, sub = !start && n('subIn') > 0, off = n('subOut') > 0, sent = n('red') + n('yellowRed') > 0;
       const minutes = Math.max(0, n('minutes'));
