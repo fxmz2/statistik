@@ -126,6 +126,19 @@
   @media (max-width: 560px) { .tsg .tsg-duo-table { font-size: var(--cds-font-size-caption); } .tsg-duo-head { min-width: 4.5rem; } }
   .tsg .tsg-duo-table td.tsg-duo-best { font-weight: 700; }
   .tsg .tsg-duo-table tr.tsg-duo-group td { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); text-transform: uppercase; letter-spacing: .04em; padding-top: var(--cds-pad-md); }
+  .tsg-pyramid { display: flex; flex-direction: column; gap: var(--cds-gap-sm); align-items: center; min-height: 20rem; padding-block: var(--cds-pad-sm); }
+  .tsg-prow { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--cds-gap-xs); width: 100%; }
+  .tsg-prow-label { width: 100%; text-align: center; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); letter-spacing: .04em; text-transform: uppercase; }
+  .tsg-pblock { font: inherit; color: var(--color-fg); text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1px;
+    min-width: 6.5rem; max-width: 11rem; flex: 0 1 8.4rem; box-sizing: border-box; padding: var(--cds-pad-xs) var(--cds-pad-sm); border-radius: var(--cds-radius);
+    border: 1px solid var(--color-border-line); background: color-mix(in srgb, var(--tier) 18%, var(--color-panel)); border-top: 3px solid var(--tier); }
+  .tsg-pblock:hover { border-color: var(--tier); }
+  .tsg-pblock .tsg-prank { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
+  .tsg-pblock .tsg-pn { font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+  .tsg-pblock .tsg-ps { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
+  .tsg-pblock.tsg-ptop { flex-basis: 14rem; max-width: 16rem; padding: var(--cds-pad-sm) var(--cds-pad-md); }
+  .tsg-pblock.tsg-ptop .tsg-pn { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-title); font-weight: 400; }
+  @media (max-width: 560px) { .tsg-pblock { min-width: 5.6rem; flex-basis: 6.5rem; padding-inline: 4px; } .tsg-pblock .tsg-pn { font-size: var(--cds-font-size-caption); } }
   .tsg-gd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--cds-gap-sm) var(--cds-gap-lg); }
   .tsg-detail-bar { grid-column: 2 / 4; }
   .tsg .tsg-lead li.tsg-detail { display: block; }
@@ -854,6 +867,21 @@
 
   <!-- REKORDE -->
   <section class="tsg-stack tsg-panel" id="rekorde" role="tabpanel" aria-labelledby="tab-rekorde" hidden>
+    <div class="tsg-card" id="pyramide" data-scope="1">
+        <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-pyramide" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-pyramide" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
+      <div class="tsg-card-head">
+        <h2>Vereins-Pyramide: die 30 wichtigsten Spieler</h2>
+        <select class="tsg-select tsg-pyr-weight" id="pyr-weight" aria-label="Gewichtung der Pyramide">
+          <option value="balanced" selected data-desc="Ausgewogen: Einsätze 30 %, Scorerpunkte 20 %, Saisons 15 %, Spielminuten 15 %, Startelf-Einsätze 10 %, Wirkung 10 %.">Ausgewogen</option>
+          <option value="loyal" data-desc="Treue &amp; Einsätze: Einsätze 35 %, Saisons 30 %, Spielminuten 20 %, Startelf-Einsätze 15 %.">Treue &amp; Einsätze</option>
+          <option value="goals" data-desc="Torgefahr: Scorerpunkte 35 %, Tore 20 %, Einsätze 20 %, Wirkung 15 %, Spielminuten 10 %.">Torgefahr</option>
+          <option value="impact" data-desc="Wirkung: Punkte pro Spiel mit minus ohne ihn 35 %, Einsätze 25 %, Plus/Minus pro 90 Minuten 20 %, Scorerpunkte 20 %.">Wirkung</option>
+        </select>
+      </div>
+      <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="pyr-weight">—</p>
+      <div class="tsg-pyramid dash-skeleton" data-draw="pyramide" data-source="spielerspiele spiele"></div>
+      <p class="tsg-note">Vereinswert 0–100: Jede Kennzahl wird am besten Spieler der Auswahl gemessen (bester = 100 %) und dann gewichtet. Wirkung zählt erst ab mehreren Einsätzen voll. Klick auf einen Namen öffnet das Profil.</p>
+    </div>
     <div class="tsg-card" id="meilensteine" data-scope="1">
         <div class="tsg-cf" role="group" aria-label="Eigener Filter für diese Karte"><select class="tsg-select tsg-cf-team" id="cf-team-meilensteine" aria-label="Mannschaft für diese Karte"><option value="" selected>Mannschaft wie oben</option><option value="m1">1. Mannschaft</option><option value="ii">II</option><option value="both">Beide</option></select><select class="tsg-select tsg-cf-range" id="cf-range-meilensteine" aria-label="Zeitraum für diese Karte" data-draw="cfrange" data-source="spiele"></select></div>
       <div class="tsg-card-head">
@@ -1071,8 +1099,8 @@
   </footer>
 </div>
 <script src="calcs.js?v=e169b753"></script>
-<script src="core.js?v=8fc4abe5"></script>
-<script src="views.js?v=49991da5"></script>
+<script src="core.js?v=24cb529f"></script>
+<script src="views.js?v=d6f62d93"></script>
 
 </main>
 <footer class="site-foot"><span id="datenstand">Datenstand: –</span><span>Daten: <a href="https://www.fupa.net/club/tsgv-rechberg" target="_blank" rel="noopener">FuPa</a></span></footer>

@@ -29,7 +29,7 @@
     if (props) for (const [k, v] of Object.entries(props)) {
       if (v === undefined || v === null) continue;
       if (k === 'class') e.className = v;
-      else if (k === 'style') Object.assign(e.style, v);
+      else if (k === 'style') for (const [sk, sv] of Object.entries(v)) { if (sk.startsWith('--')) e.style.setProperty(sk, sv); else e.style[sk] = sv; }
       else if (k === 'text') e.textContent = v;
       else if (k.startsWith('data-') || k.startsWith('aria-') || k === 'href' || k === 'target' || k === 'rel') e.setAttribute(k, v);
       else e[k] = v;

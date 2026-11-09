@@ -2,7 +2,7 @@
 (() => {
   const T = window.tsg;
   const h = T.h;
-  const ALL = ['cfrange', 'duowahl', 'duotabelle', 'gamessum', 'spieltabelle', 'seasonsel', 'summary', 'kpi', 'kpisplit', 'spot', 'mdesc', 'legend', 'saisonchart', 'lead', 'profilwahl', 'pval', 'profilchart', 'profilspiele',
+  const ALL = ['cfrange', 'pyramide', 'duowahl', 'duotabelle', 'gamessum', 'spieltabelle', 'seasonsel', 'summary', 'kpi', 'kpisplit', 'spot', 'mdesc', 'legend', 'saisonchart', 'lead', 'profilwahl', 'pval', 'profilchart', 'profilspiele',
     'profiltabelle', 'spielertabelle', 'wkpi', 'subhist', 'statetabelle', 'mitohnetabelle', 'kaderlegend', 'kaderchart', 'durchchart', 'beidetabelle', 'bkpi',
     'platzchart', 'tabellentabelle', 'heimtabelle', 'spielliste', 'gegnertabelle', 'bestseason', 'msrecent', 'msnext', 'rbsum', 'rueckblick', 'factsum', 'fact', 'tjchart', 'abdeckung', 'fehlliste', 'abweichung', 'bilanzkurz', 'mittabelle', 'vorltabelle', 'pgegtabelle'];
   T.redraw = (names = ALL) => names.forEach((n) => dash.draw(n));
@@ -1313,4 +1313,59 @@
       location.reload();
     }));
   }
+
+  // ---------- Vereins-Pyramide ----------
+  const PYR_ROWS = [1, 2, 3, 4, 5, 7, 8];
+  const PYR_LABELS = ['Nr. 1', 'Platz 2–3', 'Platz 4–6', 'Platz 7–10', 'Platz 11–15', 'Platz 16–22', 'Platz 23–30'];
+  const PYR_WEIGHTS = {
+    balanced: {matches: .30, points: .20, seasons: .15, minutes: .15, starts: .10, impact: .10},
+    loyal: {matches: .35, seasons: .30, minutes: .20, starts: .15},
+    goals: {points: .35, goals: .20, matches: .20, impact: .15, minutes: .10},
+    impact: {impact: .35, matches: .25, pm: .20, points: .20},
+  };
+  T.pyramid = (mode) => {
+    const ps = T.players();
+    if (!ps.length) return [];
+    const w = PYR_WEIGHTS[mode] || PYR_WEIGHTS.balanced;
+    const max = (f) => Math.max(1, ...ps.map((p) => p[f] || 0));
+    const mx = {matches: max('matches'), points: max('points'), goals: max('goals'), seasons: max('seasons'), minutes: max('minutes'), starts: max('starts')};
+    const conf = (p) => Math.min(1, p.matches / 30);
+    const part = (p) => ({
+      matches: p.matches / mx.matches, points: p.points / mx.points, goals: p.goals / mx.goals, seasons: p.seasons / mx.seasons,
+      minutes: p.minutes / mx.minutes, starts: p.starts / mx.starts,
+      impact: p.ppgDiff === null ? 0 : Math.max(0, Math.min(1, (p.ppgDiff + 1) / 2)) * conf(p),
+      pm: p.pmPer90 === null ? 0 : Math.max(0, Math.min(1, (p.pmPer90 + 2) / 4)) * conf(p),
+    });
+    return ps.map((p) => {
+      const pt = part(p);
+      const score = Object.entries(w).reduce((a, [k, g]) => a + g * pt[k], 0) * 100;
+      return {p, score: Math.round(score * 10) / 10};
+    }).sort((a, b) => b.score - a.score || b.p.matches - a.p.matches).slice(0, 30);
+  };
+  T.draw('pyramide', (el) => {
+    if (!T.ready(el, ['spielerspiele', 'spiele'])) return;
+    el.replaceChildren();
+    const mode = document.getElementById('pyr-weight')?.value || 'balanced';
+    const top = T.pyramid(mode);
+    if (!top.length) { el.append(h('p', {class: 'tsg-note', text: 'Keine Spieler in dieser Auswahl.'})); return; }
+    const tiers = ['--series-8', '--series-1', '--series-4', '--series-5', '--series-7', '--series-3', '--series-6'];
+    const tierColor = (i) => (dash.standalone ? `var(${tiers[i]})` : dash.colors[[7, 0, 3, 4, 6, 2, 5][i]] || dash.colors[i % dash.colors.length]);
+    let k = 0;
+    PYR_ROWS.forEach((n, ri) => {
+      const items = top.slice(k, k + n);
+      if (!items.length) return;
+      const row = h('div', {class: 'tsg-prow'}, h('span', {class: 'tsg-prow-label', text: PYR_LABELS[ri]}));
+      items.forEach((x, i) => {
+        const p = x.p, rank = k + i + 1;
+        const detail = mode === 'goals' ? `${p.goals} Tore · ${p.assists} Vorl.` : mode === 'impact' ? `${T.fmt('d2s', p.ppgDiff)} Pkt./Sp.` : mode === 'loyal' ? `${p.matches} Sp. · ${p.seasons} Saisons` : `${p.matches} Sp. · ${p.points} Scorer`;
+        row.append(h('button', {type: 'button', class: 'tsg-pblock' + (rank === 1 ? ' tsg-ptop' : ''), 'data-name': p.name, style: {'--tier': tierColor(ri)},
+          title: `${p.name}: Vereinswert ${T.fmt('d1', x.score)} · ${p.matches} Einsätze · ${p.goals} Tore · ${p.assists} Vorlagen · ${p.seasons} Saisons`},
+          h('span', {class: 'tsg-prank', text: rank + '. · ' + T.fmt('d1', x.score)}), h('span', {class: 'tsg-pn', text: p.name}), h('span', {class: 'tsg-ps', text: detail})));
+      });
+      el.append(row);
+      k += n;
+    });
+  });
+  $$('.tsg-pyramid').forEach((x) => x.addEventListener('click', (e) => showPlayer(e.target.closest('[data-name]')?.dataset.name)));
+  $$('#pyr-weight').forEach((x) => x.addEventListener('change', () => T.redraw(['pyramide', 'mdesc'])));
 })();
