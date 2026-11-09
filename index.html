@@ -139,6 +139,16 @@
   .tsg-pblock.tsg-ptop { flex-basis: 14rem; max-width: 16rem; padding: var(--cds-pad-sm) var(--cds-pad-md); }
   .tsg-pblock.tsg-ptop .tsg-pn { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-title); font-weight: 400; }
   @media (max-width: 560px) { .tsg-pblock { min-width: 5.6rem; flex-basis: 6.5rem; padding-inline: 4px; } .tsg-pblock .tsg-pn { font-size: var(--cds-font-size-caption); } }
+  details.tsg-pyr-custom { border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-sm) var(--cds-pad-md); background: var(--color-bg); }
+  details.tsg-pyr-custom > summary { cursor: pointer; font-weight: 600; }
+  details.tsg-pyr-custom[open] { display: flex; flex-direction: column; gap: var(--cds-gap-sm); }
+  .tsg-pyr-sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: var(--cds-gap-md) var(--cds-gap-xl); }
+  .tsg-sgroup { display: flex; flex-direction: column; gap: 6px; }
+  .tsg-slider { display: grid; grid-template-columns: minmax(0, 9.5rem) minmax(0, 1fr) 3.2rem; gap: var(--cds-gap-sm); align-items: center; font-size: var(--cds-font-size-caption); }
+  .tsg-slider-name { display: flex; flex-direction: column; line-height: 1.2; }
+  .tsg-slider-name small { color: var(--color-fg-muted); font-size: .9em; }
+  .tsg-slider input[type="range"] { width: 100%; accent-color: var(--color-fg); }
+  .tsg-slider-pct { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
   .tsg-gd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--cds-gap-sm) var(--cds-gap-lg); }
   .tsg-detail-bar { grid-column: 2 / 4; }
   .tsg .tsg-lead li.tsg-detail { display: block; }
@@ -876,9 +886,43 @@
           <option value="loyal" data-desc="Treue &amp; Einsätze: Einsätze 35 %, Saisons 30 %, Spielminuten 20 %, Startelf-Einsätze 15 %.">Treue &amp; Einsätze</option>
           <option value="goals" data-desc="Torgefahr: Scorerpunkte 35 %, Tore 20 %, Einsätze 20 %, Wirkung 15 %, Spielminuten 10 %.">Torgefahr</option>
           <option value="impact" data-desc="Wirkung: Punkte pro Spiel mit minus ohne ihn 35 %, Einsätze 25 %, Plus/Minus pro 90 Minuten 20 %, Scorerpunkte 20 %.">Wirkung</option>
+          <option value="custom">Eigene Gewichtung</option>
         </select>
       </div>
-      <p class="tsg-note tsg-mdesc" data-draw="mdesc" data-for="pyr-weight">—</p>
+      <p class="tsg-note" data-draw="pyrdesc" data-source="spielerspiele">—</p>
+      <details class="tsg-pyr-custom" id="pyr-custom">
+        <summary>Gewichtung selbst anpassen (18 Kennzahlen)</summary>
+        <p class="tsg-note">Schieber von 0 bis 100. Rechts steht der Anteil am Vereinswert; alle Anteile ergeben zusammen 100 %. Kennzahlen pro Spiel zählen erst ab etwa 30 Einsätzen voll.</p>
+        <div class="tsg-pyr-sliders">
+          <div class="tsg-sgroup"><span class="tsg-flabel">Einsatz &amp; Treue</span>
+            <label class="tsg-slider" for="pyr-matches"><span class="tsg-slider-name">Einsätze<small>Ligaspiele mit Einsatz</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-matches" data-k="matches"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="matches" for="pyr-matches">—</output></label>
+            <label class="tsg-slider" for="pyr-minutes"><span class="tsg-slider-name">Spielminuten<small>Minuten auf dem Platz</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-minutes" data-k="minutes"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="minutes" for="pyr-minutes">—</output></label>
+            <label class="tsg-slider" for="pyr-starts"><span class="tsg-slider-name">Startelf-Einsätze<small>Spiele von Anfang an</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-starts" data-k="starts"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="starts" for="pyr-starts">—</output></label>
+            <label class="tsg-slider" for="pyr-full"><span class="tsg-slider-name">Durchgespielt<small>Spiele über 90 Minuten</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-full" data-k="full"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="full" for="pyr-full">—</output></label>
+            <label class="tsg-slider" for="pyr-seasons"><span class="tsg-slider-name">Saisons<small>Saisons mit Einsatz</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-seasons" data-k="seasons"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="seasons" for="pyr-seasons">—</output></label>
+            <label class="tsg-slider" for="pyr-maxStreak"><span class="tsg-slider-name">Längste Serie<small>Saisons am Stück</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-maxStreak" data-k="maxStreak"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="maxStreak" for="pyr-maxStreak">—</output></label>
+            <label class="tsg-slider" for="pyr-playRate"><span class="tsg-slider-name">Spielzeit-Quote<small>Minuten von möglichen</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-playRate" data-k="playRate"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="playRate" for="pyr-playRate">—</output></label>
+          </div>
+          <div class="tsg-sgroup"><span class="tsg-flabel">Tore &amp; Scorer</span>
+            <label class="tsg-slider" for="pyr-points"><span class="tsg-slider-name">Scorerpunkte<small>Tore plus Vorlagen</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-points" data-k="points"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="points" for="pyr-points">—</output></label>
+            <label class="tsg-slider" for="pyr-goals"><span class="tsg-slider-name">Tore<small>Ligatore</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-goals" data-k="goals"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="goals" for="pyr-goals">—</output></label>
+            <label class="tsg-slider" for="pyr-assists"><span class="tsg-slider-name">Vorlagen<small>Torvorlagen</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-assists" data-k="assists"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="assists" for="pyr-assists">—</output></label>
+            <label class="tsg-slider" for="pyr-pointsPerGame"><span class="tsg-slider-name">Scorer pro Spiel<small>Torbeteiligung je Einsatz</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-pointsPerGame" data-k="pointsPerGame"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="pointsPerGame" for="pyr-pointsPerGame">—</output></label>
+          </div>
+          <div class="tsg-sgroup"><span class="tsg-flabel">Wirkung &amp; Erfolg</span>
+            <label class="tsg-slider" for="pyr-impact"><span class="tsg-slider-name">Mit/ohne ihn<small>Punkte pro Spiel mit minus ohne ihn</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-impact" data-k="impact"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="impact" for="pyr-impact">—</output></label>
+            <label class="tsg-slider" for="pyr-pm"><span class="tsg-slider-name">Plus/Minus pro 90<small>Tore minus Gegentore auf dem Platz</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-pm" data-k="pm"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="pm" for="pyr-pm">—</output></label>
+            <label class="tsg-slider" for="pyr-wins"><span class="tsg-slider-name">Siege mit Einsatz<small>gewonnene Spiele mit ihm</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-wins" data-k="wins"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="wins" for="pyr-wins">—</output></label>
+            <label class="tsg-slider" for="pyr-winWith"><span class="tsg-slider-name">Siegquote mit ihm<small>Anteil gewonnener Spiele</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-winWith" data-k="winWith"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="winWith" for="pyr-winWith">—</output></label>
+            <label class="tsg-slider" for="pyr-ppgWith"><span class="tsg-slider-name">Punkte pro Spiel mit ihm<small>Mannschaftspunkte je Einsatz</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-ppgWith" data-k="ppgWith"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="ppgWith" for="pyr-ppgWith">—</output></label>
+            <label class="tsg-slider" for="pyr-inGain"><span class="tsg-slider-name">Joker-Wirkung<small>Punkte nach seinen Einwechslungen</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-inGain" data-k="inGain"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="inGain" for="pyr-inGain">—</output></label>
+          </div>
+          <div class="tsg-sgroup"><span class="tsg-flabel">Fairness</span>
+            <label class="tsg-slider" for="pyr-fair"><span class="tsg-slider-name">Fairplay<small>wenige Karten pro Spiel</small></span><input type="range" min="0" max="100" step="5" value="0" class="tsg-pyr-range" id="pyr-fair" data-k="fair"><output class="tsg-slider-pct" data-draw="pyrpct" data-k="fair" for="pyr-fair">—</output></label>
+          </div>
+        </div>
+        <div class="tsg-row"><button type="button" class="tsg-preset" id="pyr-zero">Alle Schieber auf 0</button></div>
+      </details>
       <div class="tsg-pyramid dash-skeleton" data-draw="pyramide" data-source="spielerspiele spiele"></div>
       <p class="tsg-note">Vereinswert 0–100: Jede Kennzahl wird am besten Spieler der Auswahl gemessen (bester = 100 %) und dann gewichtet. Wirkung zählt erst ab mehreren Einsätzen voll. Klick auf einen Namen öffnet das Profil.</p>
     </div>
@@ -1100,7 +1144,7 @@
 </div>
 <script src="calcs.js?v=e169b753"></script>
 <script src="core.js?v=24cb529f"></script>
-<script src="views.js?v=d6f62d93"></script>
+<script src="views.js?v=70405190"></script>
 
 </main>
 <footer class="site-foot"><span id="datenstand">Datenstand: –</span><span>Daten: <a href="https://www.fupa.net/club/tsgv-rechberg" target="_blank" rel="noopener">FuPa</a></span></footer>
